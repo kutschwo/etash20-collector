@@ -6,10 +6,13 @@
 // ETA SH20 Scheitholzkessel über RS232 SMS-Schnittstelle
 // Konstanten, Listen, etc.
 //*******************************************************************************************************************
-#ifndef DATATYPES_H
-#define DATATYPES_H
+#ifndef ETA_SH_20_H
 
 #define ETA_SH_20_H
+
+#define FRSTDATA 5                  // Die Nutzdaten starten ab Byte 6, Zeitinterval --> 5 weil der Index bei 0 start.
+#define REF_TIME 15                  // Refreshtime, alle n Sekunden werden neue Daten vom Kessel gesendet.
+
 
 struct sh20entry {
     unsigned char  id;
@@ -17,17 +20,18 @@ struct sh20entry {
 }
 
 static const int sh20_size  = 20;
-static const unsigned char AEC = 0x08;      // Kennung Scheitholzkessel
-//#define CHKSUM ((unsigned char)0)   // Checksumme Nutzbytes Module 256 der Summe
-static const unsigned char POSCHKSUM =  4;  // Position der Checksumme 5. Byte --> 4 weil der Index bei 0 start.
-#define FRSTDATA 5                  // Die Nutzdaten starten ab Byte 6, Zeitinterval --> 5 weil der Index bei 0 start.
-#define REF_TIME 5                  // Refreshtime, alle n Sekunden werden neue Daten vom Kessel gesendet.
+static const unsigned char AEC = 0x08; // Kennung Scheitholzkessel
+static const int PosChksum =  4;       // Position der Checksumme 5. Byte --> 4 weil der Index bei 0 start.
+static const int FirstData = 5;        // Nutzdaten ab Byte Nr 6
+static const int EtaBaudRate = 19200;
 
-unsigned char start[3]          = {'{','M','C'}; // Jede Anfrage an den Kessel bginnt mit diesen Zeichen.
+
+unsigned char MsgStart[3]          = {'{','M','C'}; // Jede Anfrage an den Kessel bginnt mit diesen Zeichen.
 unsigned char query[110];                        // per Definition werde nie mehr als 106 Byte benötigt.
 unsigned char answer[110];
 
-static const unsigned char stop_msg[6]    = {'{','M','E',0,0,'}'};                   // Dieser Befehl stoppt die Datenübertragung des eta-Kessels 
+static const unsigned char StopMsg[6]    = {'{','M','E',0,0,'}'};                   // Dieser Befehl stoppt die Datenübertragung des eta-Kessels
+static const int LenStopMsg = 6;
 static const unsigned char heizung_reset_msg[8] = {'{','I','H',0x02,0x01,0x01,0x00,'}'}; //  Führt einen Reset durch wie ein/aus Hauptschalter
 static const unsigned char heizung_auto_msg[8] = {'{','I','H',0x02,0x02,0x02,0x00,'}'}; //  Schaltet Mischkreis auf AUTO-Betrieb
 static const unsigned char heizung_tag_msg[8] = {'{','I','H',0x02,0x04,0x04,0x00,'}'}; //  Schaltet Mischkreis auf Tag-Betrieb
@@ -35,7 +39,8 @@ static const unsigned char heizung_nacht_msg[8]  = {'{','I','H',0x02,0x08,0x08,0
 static const unsigned char heizung_ein_msg[8] = {'{','I','H',0x02,0x10,0x10,0x00,'}'}; //  Schaltet den Kessel ein
 static const unsigned char heizung_aus_msg[8] = {'{','I','H',0x02,0x20,0x20,0x00,'}'}; //  Schaltet den Kessel aus
 static const unsigned char boiler_laden_msg[8] = {'{','I','H',0x02,0x40,0x40,0x00,'}'}; //  Boiler laden
-static const unsigned char heizung_00[8]   = {'{','I','H',0x02,0x00,0x00,0x00,'}'}; // Nicht dokumentier zum probieren was passiert
+static const unsigned char heizung_00_msg[8]   = {'{','I','H',0x02,0x00,0x00,0x00,'}'}; // Nicht dokumentier zum probieren was passiert
+static const int LenModeMsg  = 8 ;
 
 static const sh20entry sh20mqttid[] = {
     {  3, "003_0_bei_Tuer_offen"},            // 0

@@ -3,6 +3,8 @@
 // serial.c
 //
 // (c) Hewell Technology Ltd. 2014
+// Wolfgang Kutscherauer 2024
+// für ETA SH20 auf 8N2 (2 Stopp-Bits) umgestellt.
 //
 //****************************************************************************
 
@@ -314,6 +316,12 @@ bool serial_set_baud_rate(int rate)
 
     attr.c_cflag |= (CLOCAL | CREAD | CS8);
     attr.c_cflag &= ~(CSIZE | CRTSCTS | PARENB);
+    // setting num StopBits
+    // added 2024 by Wolfgang Kutscherauer for ETA SH20 wood heating oven
+    // next line 1 Bit
+    attr.c_cflag &= ~CSTOPB; // clear stop fiel --> one stop Bit
+    // next line 2 stop bits
+    attr.c_cflag != CSTOPB;  // set stop field --> two stop Bits
     if (tcsetattr(fd, TCSANOW, &attr) != 0)
     {
         strncpy(error_str, "Error reading COM port settings", sizeof(error_str));

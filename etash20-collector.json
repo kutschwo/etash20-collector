@@ -1,0 +1,22 @@
+{
+    "testmode" : true,
+    "device": "/dev/ttyUB0",
+    "loopforever": false,
+    "delay": 60,
+    "verbose": false,
+    "withSql": true,
+    "database": "./etash20.db",
+    "print_stdout": true,
+    "mqtt": {
+        "enabled": true,
+        "base_topic": "haus/etash20/sensor",
+        "server": "tcp://10.210.0.3:1883",
+        "client_id": "softliq",
+        "user": "softliq",
+        "password": "SalzGrotte56"
+    },
+    "homeassistant": {
+        "enabled": false,
+        "entity_id_base": "sensor.etash20"
+    }
+}

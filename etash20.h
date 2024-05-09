@@ -26,7 +26,7 @@ static const int FirstData = 5;        // Nutzdaten ab Byte Nr 6
 static const int EtaBaudRate = 19200;
 
 
-unsigned char MsgStart[3]          = {'{','M','C'}; // Jede Anfrage an den Kessel bginnt mit diesen Zeichen.
+static const unsigned char MsgStart[3]          = {'{','M','C'}; // Jede Anfrage an den Kessel bginnt mit diesen Zeichen.
 unsigned char query[110];                        // per Definition werde nie mehr als 106 Byte benötigt.
 unsigned char answer[110];
 
@@ -42,7 +42,7 @@ static const unsigned char boiler_laden_msg[8] = {'{','I','H',0x02,0x40,0x40,0x0
 static const unsigned char heizung_00_msg[8]   = {'{','I','H',0x02,0x00,0x00,0x00,'}'}; // Nicht dokumentier zum probieren was passiert
 static const int LenModeMsg  = 8 ;
 
-static const sh20entry sh20mqttid[] = {
+static const sh20entry sh20mqttid[20] = {
     {  3, "003_0_bei_Tuer_offen"},            // 0
     {  7, "007_RpmGeblase"},             // 1
     {  8, "008_TempKessel"},                // 2
@@ -324,5 +324,12 @@ unsigned char *bez[256] ={"0 unbekannt",
 "255 unbekannt"
 };
 
+
+// Berechnung der Checksumme über die Nutzdaten
+// Summe aller Nutzdaten, dann Modulo 256 der Summe
+unsigned char EtaChkSum(unsigned char data[], int numvals);
+
+// Erzeugung eines kompletten Anforderungsstrings
+int MakeEtaRequest(int numvals, unsigned char refreshtime, unsigned char start_idx, unsigned char node, unsigned char* request );
 
 #endif

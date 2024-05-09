@@ -1,12 +1,10 @@
 //******************************************************************************************************************
 // datatypes.h
 //
-// (c) Hewell Technology Ltd. 2014
-//
-// Tobias Tangemann 2020
-// Wolfgang Kutscherauer 2023
-// Modifikation to deal with different types of VBus devices
-// Define a structure / union for the VBus data depending on the VBus device
+// (c) Wolfgang Kutscherauer 2024
+// created for the data of an wood heating eta sh22 
+// production time about 2006 to 2012
+// the series with the RS232 9 Pin Connector
 // 
 //*******************************************************************************************************************
 

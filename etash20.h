@@ -3,9 +3,8 @@
 //
 // (c) Wolfgang Kutscherauer 2024
 //
-// packet struct for:
 // ETA SH20 Scheitholzkessel über RS232 SMS-Schnittstelle
-//
+// Konstanten, Listen, etc.
 //*******************************************************************************************************************
 #ifndef DATATYPES_H
 #define DATATYPES_H
@@ -40,25 +39,25 @@ static const unsigned char heizung_00[8]   = {'{','I','H',0x02,0x00,0x00,0x00,'}
 
 static const sh20entry sh20mqttid[] = {
     {  3, "003_0_bei_Tuer_offen"},            // 0
-    {  7, "007_Geblaese_u-min"},             // 1
-    {  8, "008_Kessel_Temp"},                // 2
-    {  9, "009 Kesselrücklauf Temp."},       // 3
-    { 10, "010_Puffer_unten"},               // 4
-    { 11, "011_Puffer_mitte"},               // 5, Ebene 2
-    { 12, "012_Puffer_oben"},                // 6
-    { 15, "015_Abgas_Temp"},                 // 7
-    { 16, "016_Stellmotor_oben"},            // 8
-    { 17, "017_Stellmotor_unten"},           // 9
-    { 31, "031_aendert_sich_bei_Tuer_offen"},// 10, Ebene 1
-    { 39, "039_Tag_Nacht_evtl"},             // 11
+    {  7, "007_RpmGeblase"},             // 1
+    {  8, "008_TempKessel"},                // 2
+    {  9, "009 TempRueckl"},       // 3
+    { 10, "010_PufferUnten"},               // 4
+    { 11, "011_PufferMitte"},               // 5, Ebene 2
+    { 12, "012_PufferOben"},                // 6
+    { 15, "015_TempAbgas"},                 // 7
+    { 16, "016_LuftOben"},            // 8
+    { 17, "017_LuftUten"},           // 9
+    { 31, "031_unknown"},// 10, Ebene 1
+    { 39, "039_TagNacht_evtl"},             // 11
     { 43, "043_Pumpe_MK1_evtl"},             // 12
     { 68, "068_Vorlauf_MK1"},                // 13
-    { 70, "070_Aussentemp"},                 // 14
+    { 70, "070_TempAussen"},                 // 14
     { 75, "075_Pufferladung"},               // 15, Ebene 2
-    { 76, "076_aendert_sich_bei_Tuer_offen"},// 16
-    {197, "197_unbekannte_Funktion"},        // 17
-    {198, "198_unbekannte_Funktion"},        // 18
-    {212, "212_unbekannte_Funktion"}         // 19
+    { 76, "076_unknown"},// 16
+    {197, "197_unknown"},        // 17
+    {198, "198_unknown"},        // 18
+    {212, "212_unknown"}         // 19
 };
 
 

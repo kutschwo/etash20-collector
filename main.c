@@ -1,8 +1,7 @@
 //****************************************************************************
 // main.c
 //
-// based on worl of
-// (c) Hewell Technology Ltd. 2014
+// based on work of (c) Hewell Technology Ltd. 2014
 //
 // modified by Tobias Tangemann 2020
 // Wolfgang Kutscherauer 2024
@@ -56,10 +55,11 @@ int main(int argc, char *argv[])
     Data_Packet packet;
     PVBUS_V1_CMD pPacket = (PVBUS_V1_CMD)&serial_buffer[0];
     unsigned char i = 0;
-    int headerSync = 0;
-    int loopforever = 0;
+    int framedata = 0;          // 1 solange Daten eines Frames empfangen werden
+    int frameready = 0;         // sobald } empfangen wird ist der Frame fertig
+    int loopforever = 0;        // wenn das Programm als Dienst läuft = 1 für Endlos-Betrieb.
     int packet_displayed = 0;
-    bool firstLoop = true;
+    bool firstLoop = true;      // wenn das Programm das 1. mal durchlaufen wird --> Einrichtung DB, etc.
 
 //Initialisierung der der CONFIG-Struktur, alles auf 0, false, NULL
 // damit der Initial-Zustand definiert ist.
@@ -196,9 +196,9 @@ int main(int argc, char *argv[])
         }
     }
 #endif
-    start:
-    i = 0; headerSync = 0; packet_displayed = 0;
-    // set index in serial_buffer, sync byte not received, count of published packets
+   // start:
+    i = 0; framedata = 0; packet_displayed = 0; frameready = 0;
+    // set index in serial_buffer, sync byte not received, count of published packets, end of data flag
 
     // open serial connection (fn from serial.c)
     if (!serial_open_port(cfg.serial_port))
@@ -206,7 +206,11 @@ int main(int argc, char *argv[])
         printf("Errno(%d) opening serial port %s: %s\n", errno, cfg.serial_port, strerror(errno));
         return 2;
     }
-
+    if (!serial_set_baud_rate(19200))
+    {
+        printf("Failed to set baud rate: %s\n", serial_get_error());
+        return 3;
+    }
         // if the filename for sqlite db ist given, open it.
     if (cfg.database != NULL)
     {
@@ -220,7 +224,7 @@ int main(int argc, char *argv[])
             return 6;
         }
 
-        if (firstLoop)
+        if (firstLoop) // at first run of the main loop check for db, etc.
         {
             sqlite_create_table();            
         }
@@ -233,11 +237,7 @@ int main(int argc, char *argv[])
         printf("Setting baudrate...\n");
     }
 
-    if (!serial_set_baud_rate(19200))
-    {
-        printf("Failed to set baud rate: %s\n", serial_get_error());
-        return 3;
-    }
+
 
     if (cfg.mqtt_enabled)
     {
@@ -261,188 +261,75 @@ int main(int argc, char *argv[])
         {
             break;
         }
-// try to read one byte from serial
-        int count = serial_read(&(serial_buffer[i]), 1);
-        if (count < 1)
-// if no byte received wait 50 ms
+        do // START do .. while (frameready == 0) 
         {
+        // try to read one byte from serial
+          int count = serial_read(&(serial_buffer[i]), 1);
+          if (count < 1)
+        // if no byte received wait 50 ms
+          {
             // sleep 50ms
             nanosleep((const struct timespec[]){{.tv_sec = 0, .tv_nsec = 50000000L}}, NULL);            
             continue;
-        }
-// if the received byte = { it is the start of a data packet
-// write it to byte 0 of buffer and set header sync to 1
-        if (serial_buffer[i]  == '{')
-        {
+          }
+          // if the received byte = { it is the start of a data packet
+          // write it to byte 0 of buffer and set header sync to 1
+          if (serial_buffer[i]  == '{')
+          {
             serial_buffer[0] = serial_buffer[i];
             i=0;
-            headerSync = 1;
-
+            framedata = 1;
             if (cfg.verbose)
             {
-                printf("\n\n");
+                printf("\nStart Byte { received.\n");
             }
-        }
-// print Byte when verbose is on
-// line wrap after 16 bytes
-        if (cfg.verbose)
-        {
-            printf("%02x ", serial_buffer[i]);
-
-            if (i != 0 && i % 16 == 0)
+            // print Byte when verbose is on, line wrap after 16 bytes
+            if (cfg.verbose)
             {
+              printf("%02x ", serial_buffer[i]);
+              if (i != 0 && i % 16 == 0)
+              {
                 printf("\n");
-            }
-        }
+              }
+            } // END if (cfg.verbose)
+        
 
-        i++;        
-
-        if (headerSync)
-        {
-            if (i == 1 && cfg.verbose)
+           }  // END if (serial_buffer[i]  == '{')
+           if (framedata == 1 && serial_buffer[i] == '}'))
+           {
+             frameready = 1;
+           }
+           i++;  
+        } while (frameready == 0) ; // END do .. while (frameready == 0) 
+        if ( cfg.verbose)
+          {
+            printf("\nSH20 frame received\n");
+          }
+#if __SQLITE__
+          if (cfg.withSql)
+          {
+            if (cfg.verbose) 
             {
-                printf("New packet\n");
+              printf("\nWriting to database\n");
             }
-
-            if (i > sizeof(VBUS_HEADER))
-            {
-                // we have nearly all the header
-                // test for protocol version 1
-                // when not reset header sync and wait for start of a new fram
-                if ((pPacket->h.ver & 0xF0) != 0x10)
-                {
-                    headerSync = 0;
-                    continue;
-                }
-
-                if (i < sizeof(VBUS_V1_CMD)) {
-                    continue;
-                }
-
-                if (i < ((pPacket->frameCnt * sizeof(FRAME_STRUCT)) + sizeof(VBUS_V1_CMD)))
-                {
-                    continue;
-                }
-
-                headerSync = 0;
-
-                // Whole packet received, calculate CRC
-                unsigned char crc = vbus_calc_crc((void*)serial_buffer, 1, 8);
-
-                if (cfg.verbose)
-                {
-                    printf("\n\nPacket size: %d. Source: 0x%04x, Destination: 0x%04x, Command: 0x%04x, #Frames: %d, CRC: 0x%02x(%s)\n",
-                        i, pPacket->h.source, pPacket->h.dest, pPacket->cmd, pPacket->frameCnt, pPacket->crc, pPacket->crc == crc ? "ok" : "invalid");
-                }
-
-                if (pPacket->crc != crc)
-                {
-                    if (cfg.verbose)
-                    {
-                        printf("CRC Error!\n");
-                    }
-
-                    continue;
-                }
-
-                // Not sure what this packet is
-                if (pPacket->cmd != 0x0100 || pPacket->h.dest != 0x10)
-                {
-                    if (cfg.verbose)
-                    {
-                        printf("Ignoring unkown packet!\n");
-                    }
-
-                    continue;
-                }
-
-                // Packet is from DeltaSol BS Plus, decode it
-                int crcOK = 0;
-                for (unsigned char j = 0; j < pPacket->frameCnt; j++)
-                {
-                    crc = vbus_calc_crc((void*)&pPacket->frame[j], 0, 5);
-                    crcOK = (pPacket->frame[j].crc == crc);
-
-                    if (cfg.verbose)
-                    {
-                        printf("Bytes: %02x%02x%02x%02x, Septett: %02x, crc: %02x(%s)\n\n",
-                            pPacket->frame[j].bytes[0], pPacket->frame[j].bytes[1], pPacket->frame[j].bytes[2], pPacket->frame[j].bytes[3],
-                            pPacket->frame[j].septett, pPacket->frame[j].crc, crcOK ? "ok" : "invalid");
-                    //inserted for debugging as DeltaSol E not work
-                    //printf("j = %d,  / pPacket->frameCnt = %d\n\n", j, pPacket->frameCnt); 
-                    }
-
-                    if (!crcOK)
-                    {
-                        if (cfg.verbose)
-                        {
-                            printf("Frame CRC Error!\n");
-                            crcOK = 0;
-                        }
-
-                        break;
-                    }
-
-                    vbus_inject_septett((void *)&(pPacket->frame[j]), 0, 4);
-                    for (unsigned char k = 0; k < 4; k++)
-                    {
-                        packet.asBytes[(j * 4) + k] = pPacket->frame[j].bytes[k];
-                    //    if (cfg.verbose)
-                    //{
-                    //    printf("packet.asBytes[(%d * 4) + %d] = %d pPacket->frame[%d].bytes[%d] = %d\n\n", j, k,packet.asBytes[(j * 4) + k], j, k, pPacket->frame[j].bytes[k]);
-                   // }
-                    }
-                }
-
-                if (!crcOK)
-                {
-                    continue;
-                }
-
-                #if __SQLITE__
-                    if (cfg.withSql)
-                    {
-                        if (cfg.verbose) 
-                        {
-                            printf("\nWriting to database\n");
-                        }
-
-                        sqlite_insert_data(&packet);
-                    }
-                #endif
-
-                if (cfg.print_result)
-                    
-                {
-                    print_vbus_data(&packet);
-                }
-
-                if (cfg.mqtt_enabled)
+            sqlite_insert_data(&packet);
+          }
+#endif
+          if (cfg.print_result)
+          {
+            printf("\nPrint_result nicht implementier.\n");
+          }
+                          if (cfg.mqtt_enabled)
                 {
                     if (cfg.verbose) 
                     {
                         printf("\nPublishing to mqtt broker\n");
                     }
-                    
-#ifdef DS_E_CONTROLLER
-                    publish_mqtt("tkol", packet.DSECtrlPkt.TempSensor01 * 0.1, "%.1f");
-                    publish_mqtt("tspm", packet.DSECtrlPkt.TempSensor02 * 0.1, "%.1f");
-                    publish_mqtt("tspu", packet.DSECtrlPkt.TempSensor04 * 0.1, "%.1f");
-                    publish_mqtt("twt", packet.DSECtrlPkt.TempSensor03 * 0.1, "%.1f");
-                    publish_mqtt("colpump", packet.DSECtrlPkt.PumpSpeed1);
-                    publish_mqtt("wtpump", packet.DSECtrlPkt.PumpSpeed2);
-                    publish_mqtt("valve", packet.DSECtrlPkt.PumpSpeed4/100 );
-
-#endif
-#ifdef DS_BS_PLUS
-                    publish_mqtt("ofen/temp", packet.bsPlusPkt.TempSensor1 * 0.1, "%.1f");
-                    publish_mqtt("ofen/pump", packet.bsPlusPkt.PumpSpeed1);
-                    publish_mqtt("ruecklauf/temp", packet.bsPlusPkt.TempSensor4 * 0.1, "%.1f");
-                    publish_mqtt("ruecklauf/valve", packet.bsPlusPkt.PumpSpeed2 / 100);
-                    publish_mqtt("speicher/oben/temp", packet.bsPlusPkt.TempSensor3 * 0.1, "%.1f");
-                    publish_mqtt("speicher/unten/temp", packet.bsPlusPkt.TempSensor2 * 0.1, "%.1f");
-#endif
-                }
+                    // publish_mqtt("tkol", packet.DSECtrlPkt.TempSensor01 * 0.1, "%.1f");
+                    printf("\nPublishing to mqtt broker nicht implementier.\n");
+          } 
+          
+          
 #ifdef __HOASTNT__
                 if (cfg.homeassistant_enabled)
                 {
@@ -452,17 +339,10 @@ int main(int argc, char *argv[])
                     }
 
                     publish_homeassistant(&cfg, &packet);
-                }
+                } //end if (cfg.homeassistant_enabled)
 #endif
-                packet_displayed++;
 
-                fflush(stdout);
-
-                continue;
-            }
-        }
-
-    } while (loopforever == true || packet_displayed == 0);
+    } while (loopforever == true || packet_displayed == 0); //END of main do .. while loop
 
     serial_close_port();
 

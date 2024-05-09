@@ -13,15 +13,44 @@
 #ifndef DATATYPES_H
 #define DATATYPES_H
 
-//#define DS_E_CONTROLLER
 
-#ifdef DS_BS_PLUS
-#include "vbus/DS_BS_Plus.h"
-#endif
+#pragma pack(1)
+typedef union {
+  struct {
+    unsigned short TuerKontakt;
+    unsigned short RpmGeblaese;
+    unsigned short TempKesssel;
+    unsigned short RuecklKessel;
+    unsigned short PufferUnten;
+    unsigned short PufferMitte;
+    unsigned short PufferOben;
+    unsigned short TempBoiler;
+    unsigned short TempAbgas;
+    unsigned short LuftOben;
+    unsigned short LuftUnten;
+    unsigned short MK1Modus;
+    unsigned short MK1Pumpe;
+    unsigned short NichtBekannt_1;
+    unsigned short TempSolarBoiler;
+    unsigned short TempRaumMK2
+    unsigned short VorlaufMK1;
+    unsigned short VorlaufMK2;
+    unsigned short TempAussen;
+    unsigned short PufferProz;
+    unsigned short AndersTuerOffen;
+    unsigned short VorlaufMK3;
+    unsigned short RaumMK4;
+    unsigned short VorlaufMK4;
+    unsigned short VorlaufBWT;
+    unsigned short MitteBWT;
+    unsigned short Brenner;
+    unsigned short BoilerSolarOben;
+    unsigned short TempBrauchwasser;
+  } etash20Pkt;
+  unsigned char asBytes[28];
+} Data_Packet;
 
-#ifdef DS_E_CONTROLLER
-#include "vbus/DS_E_Controller.h"
-#endif
+
 
 
 #endif

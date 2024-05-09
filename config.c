@@ -2,7 +2,8 @@
 // config.c
 //
 // Tobias Tangemann 2020
-// 
+// Wolfgang Kutscherauer 2023
+// angepasst an ETA SH20 Scheitholzkessel
 // Funktionen zum Auslesen von Konfigurations-Werten aus .json Datei
 // Implementation
 //
@@ -16,7 +17,7 @@
 #define _SVID_SOURCE
 #include <string.h>
 
-#include "cJSON/cJSON.h"
+#include "cjson/cJSON.h"
 
 
 int getParameter(cJSON* json, CONFIG* cfg);
@@ -106,7 +107,7 @@ int getParameter(cJSON* json, CONFIG* cfg)
     cfg->serial_port = strdup(value->valuestring);
 
     // reset vbus (via serial device)
-    value = cJSON_GetObjectItem(json, "reset_vbus");
+    value = cJSON_GetObjectItem(json, "testmode");
     if (value != NULL && value->valuestring != NULL) {
         if (!cJSON_IsString(value))
         {
@@ -130,7 +131,7 @@ int getParameter(cJSON* json, CONFIG* cfg)
     }
 
     // Interval
-    value = cJSON_GetObjectItem(json, "interval");
+    value = cJSON_GetObjectItem(json, "delay");
     if (value == NULL || !cJSON_IsNumber(value))
     {
         printf("Invalid value for interval\n");

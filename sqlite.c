@@ -2,7 +2,8 @@
 // sqlite.c
 //
 // Tobias Tangemann 2020
-// 
+// Wolfgang Kutscherauer 2024
+// adptiert für eta sh20 Scheitholzkessel
 // function to publish data to sqlite database
 // implementation
 //

@@ -1,13 +1,17 @@
 //****************************************************************************
 // main.c
 //
+// based on worl of
 // (c) Hewell Technology Ltd. 2014
 //
-// Tobias Tangemann 2020
-// Wolfgang Kutscherauer 2023, adapted to deal with different VBus devices
+// modified by Tobias Tangemann 2020
+// Wolfgang Kutscherauer 2024
+// reused to deal with wood-heating ETA SH20
+//
+// last change 06.05.2024 by Wolfgang Kutscherauer kutschi@dingolfing.org
 //
 //****************************************************************************
-
+// system includes
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -20,12 +24,12 @@
 #include <fcntl.h>
 #include <time.h>
 
+//project includes
 #include "config.h"
 #include "datatypes.h"
-#include "printvbus.h"
 #include "kbhit.h"
 #include "serial.h"
-#include "vbus.h"
+#include "etash20.h"
 #include "mqtt.h"
 #ifdef __HOASTNT__
     #include "homeassistant.h"
@@ -42,11 +46,12 @@ char serial_buffer[256];
 
 CONFIG* maincfg;
 
+//Deklaration der Funktion um einschalten des "gesprächigen" Modus
 void enableVerbose();
 
 int main(int argc, char *argv[])
 {
-    printf("vbus-collector "GIT_VERSION"\n");
+    printf("etash20-collector "GIT_VERSION"\n");
 
     Data_Packet packet;
     PVBUS_V1_CMD pPacket = (PVBUS_V1_CMD)&serial_buffer[0];
@@ -56,9 +61,10 @@ int main(int argc, char *argv[])
     int packet_displayed = 0;
     bool firstLoop = true;
 
+//Initialisierung der der CONFIG-Struktur, alles auf 0, false, NULL
+// damit der Initial-Zustand definiert ist.
     CONFIG cfg = {
         .serial_port = NULL,
-        .reset_vbus = NULL,
         .delay = 0,
 
         .database = NULL,
@@ -80,16 +86,19 @@ int main(int argc, char *argv[])
 
     maincfg = &cfg;
 
+// Wenn die Kommandozeile aus mehr als 2 Objekten (Kommando +  ein Parameter) besteht --> parsen
     if (argc > 2)
     {
 // parse command line options
+// Schleife über das Array der Zeiger auf die Parameter
         for (int idx = 1; idx < argc; ++idx)
         {
             char *option = argv[idx];
-
+// 
             if (strcmp("-f", option)==0 || strcmp("--forever", option)==0)
             {
                 loopforever = true;
+        // if set repeat forever
             }
 
             if (strcmp("-v", option) == 0 || strcmp("--verbose", option) == 0)
@@ -101,6 +110,7 @@ int main(int argc, char *argv[])
             if (strcmp("-m", option) == 0 || strcmp("--mqtt", option) == 0)
             {
                 cfg.mqtt_enabled = true;
+    // if set enable mqtt 
             }
 
             if (strcmp("-d", option)==0 || strcmp("--delay", option)==0)
@@ -223,7 +233,7 @@ int main(int argc, char *argv[])
         printf("Setting baudrate...\n");
     }
 
-    if (!serial_set_baud_rate(9600))
+    if (!serial_set_baud_rate(19200))
     {
         printf("Failed to set baud rate: %s\n", serial_get_error());
         return 3;
@@ -260,9 +270,9 @@ int main(int argc, char *argv[])
             nanosleep((const struct timespec[]){{.tv_sec = 0, .tv_nsec = 50000000L}}, NULL);            
             continue;
         }
-// if the received byte = 0xAA it it the start of a data packet
+// if the received byte = { it is the start of a data packet
 // write it to byte 0 of buffer and set header sync to 1
-        if ((serial_buffer[i] & 0xFF) == 0xAA)
+        if (serial_buffer[i]  == '{')
         {
             serial_buffer[0] = serial_buffer[i];
             i=0;

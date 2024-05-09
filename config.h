@@ -2,7 +2,9 @@
 // config.h
 //
 // Tobias Tangemann 2020
-// 
+//
+// Wolfgang Kutscherauer 2024
+// Anpassung an ETS SH20
 // Funktionen zum Auslesen von Konfigurations-Werten aus .json Datei
 // Header-File
 //
@@ -12,11 +14,8 @@
 #include <stdbool.h>
 
 typedef struct {
-    char *softlic_url;
-
-    char* post_string;
-
-    int delay;
+    char *device;  // serial device /dev/....
+    int delay;     // Pause in Sekungen zwischen den Abfragen
 
     const char* database;
     bool withSql;

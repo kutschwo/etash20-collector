@@ -44,7 +44,7 @@ static const int LenModeMsg  = 8 ;
 
 static const sh20entry sh20mqttid[20] = {
     {  3, "003_0_bei_Tuer_offen"},            // 0
-    {  7, "007_RpmGeblase"},             // 1
+    {  7, "007_RpmGeblaese"},             // 1
     {  8, "008_TempKessel"},                // 2
     {  9, "009 TempRueckl"},       // 3
     { 10, "010_PufferUnten"},               // 4

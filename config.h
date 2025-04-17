@@ -14,7 +14,7 @@
 #include <stdbool.h>
 
 typedef struct {
-    char *device;  // serial device /dev/....
+    char* device;  // serial device /dev/....
     int delay;     // Pause in Sekungen zwischen den Abfragen
 
     const char* database;

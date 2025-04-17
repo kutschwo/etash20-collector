@@ -66,16 +66,16 @@ bool sqlite_insert_data(Data_Packet* packet)
    // m = data->DSECtrlPkt.SystemTime % 60;
    // dow = data->DSECtrlPkt.SystemTime / 1440;
    // h = (data->DSECtrlPkt.SystemTime - 1440*dow) / 60
-    sprintf(sql_buffer, "INSERT INTO dsectrl "
-    "(system_time, 003_0_bei_Tuer_offen, 007_RpmGeblaese, 008_TempKessel, 009 TempRueckl, 010_PufferUnten, 011_PufferMitte, 012_PufferOben, 015_TempAbgas, 016_LuftOben, 017_LuftUnten, 031_unknown, 039_TagNacht_evtl, 043_Pumpe_MK1_evtl, 068_Vorlauf_MK1, 070_TempAussen, 075_Pufferladung, 076_unknown, 197_unknown, 198_unknown, 212_unknown  ) VALUES "
-    "(datetime('now','localtime'), %.1f, %.1f, %.1f, %.1f, %d, %d, %d);",
-    packet->DSECtrlPkt.TempSensor01 * 0.1,
-    packet->DSECtrlPkt.TempSensor02 * 0.1,
-    packet->DSECtrlPkt.TempSensor03 * 0.1,
-    packet->DSECtrlPkt.TempSensor04 * 0.1,
-    packet->DSECtrlPkt.PumpSpeed1,
-    packet->DSECtrlPkt.PumpSpeed2,
-    packet->DSECtrlPkt.PumpSpeed4);
+//    sprintf(sql_buffer, "INSERT INTO dsectrl "
+//    "(system_time, 003_0_bei_Tuer_offen, 007_RpmGeblaese, 008_TempKessel, 009 TempRueckl, 010_PufferUnten, 011_PufferMitte, 012_PufferOben, 015_TempAbgas, 016_LuftOben, 017_LuftUnten, 031_unknown, 039_TagNacht_evtl, 043_Pumpe_MK1_evtl, 068_Vorlauf_MK1, 070_TempAussen, 075_Pufferladung, 076_unknown, 197_unknown, 198_unknown, 212_unknown  ) VALUES "
+//    "(datetime('now','localtime'), %.1f, %.1f, %.1f, %.1f, %d, %d, %d);",
+ //   packet->DSECtrlPkt.TempSensor01 * 0.1,
+    //packet->DSECtrlPkt.TempSensor02 * 0.1,
+    //packet->DSECtrlPkt.TempSensor03 * 0.1,
+//    packet->DSECtrlPkt.TempSensor04 * 0.1,
+//    packet->DSECtrlPkt.PumpSpeed1,
+//    packet->DSECtrlPkt.PumpSpeed2,
+//    packet->DSECtrlPkt.PumpSpeed4);
 
 
   if (sqlite3_exec(db, sql_buffer, NULL, 0, &error_msg) != 0)
@@ -85,6 +85,7 @@ bool sqlite_insert_data(Data_Packet* packet)
   }
 
   return true;
+
 }
 
 

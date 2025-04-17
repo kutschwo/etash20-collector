@@ -10,14 +10,13 @@
 
 #define ETA_SH_20_H
 
+#include "datatypes.h"
+
 #define FRSTDATA 5                  // Die Nutzdaten starten ab Byte 6, Zeitinterval --> 5 weil der Index bei 0 start.
 #define REF_TIME 15                  // Refreshtime, alle n Sekunden werden neue Daten vom Kessel gesendet.
 
 
-struct sh20entry {
-    unsigned char  id;
-    const char* topic ;
-}
+
 
 static const int sh20_size  = 20;
 static const unsigned char AEC = 0x08; // Kennung Scheitholzkessel
@@ -30,8 +29,12 @@ static const unsigned char MsgStart[3]          = {'{','M','C'}; // Jede Anfrage
 unsigned char query[110];                        // per Definition werde nie mehr als 106 Byte benötigt.
 unsigned char answer[110];
 
+// Vordefininierte Nachricht zum stoppen der Datenübertragung
 static const unsigned char StopMsg[6]    = {'{','M','E',0,0,'}'};                   // Dieser Befehl stoppt die Datenübertragung des eta-Kessels
 static const int LenStopMsg = 6;
+
+
+// Vordefininierte Nachrichten zum wechseln der Betriebsmodi
 static const unsigned char heizung_reset_msg[8] = {'{','I','H',0x02,0x01,0x01,0x00,'}'}; //  Führt einen Reset durch wie ein/aus Hauptschalter
 static const unsigned char heizung_auto_msg[8] = {'{','I','H',0x02,0x02,0x02,0x00,'}'}; //  Schaltet Mischkreis auf AUTO-Betrieb
 static const unsigned char heizung_tag_msg[8] = {'{','I','H',0x02,0x04,0x04,0x00,'}'}; //  Schaltet Mischkreis auf Tag-Betrieb
@@ -41,6 +44,9 @@ static const unsigned char heizung_aus_msg[8] = {'{','I','H',0x02,0x20,0x20,0x00
 static const unsigned char boiler_laden_msg[8] = {'{','I','H',0x02,0x40,0x40,0x00,'}'}; //  Boiler laden
 static const unsigned char heizung_00_msg[8]   = {'{','I','H',0x02,0x00,0x00,0x00,'}'}; // Nicht dokumentier zum probieren was passiert
 static const int LenModeMsg  = 8 ;
+
+// Vordefininierte Anweisung an den Kessel um für Tests Daten zu übertragen.
+static const unsigned char MsgSendBasicData[] = { '{','M','C', 0x19,  0x58, 0x3c, 0x08, 0x00, 0x0a, 0x08, 0x00, 0x0b, 0x08, 0x00, 0x0c, 0x08, 0x00, 0x0f, 0x08, 0x00, 0x44, 0x08, 0x00, 0x46, 0x08, 0x00, 0x03, 0x08, 0x00, 0x27 };
 
 static const sh20entry sh20mqttid[20] = {
     {  3, "003_0_bei_Tuer_offen"},            // 0
@@ -65,7 +71,7 @@ static const sh20entry sh20mqttid[20] = {
     {212, "212_unknown"}         // 19
 };
 
-
+/*
 unsigned char *bez[256] ={"0 unbekannt", 
 "1 unbekannt", 
 "2 unbekannt", 
@@ -323,7 +329,7 @@ unsigned char *bez[256] ={"0 unbekannt",
 "254 unbekannt", 
 "255 unbekannt"
 };
-
+*/
 
 // Berechnung der Checksumme über die Nutzdaten
 // Summe aller Nutzdaten, dann Modulo 256 der Summe

@@ -30,7 +30,7 @@ typedef union {
     unsigned short MK1Pumpe;
     unsigned short NichtBekannt_1;
     unsigned short TempSolarBoiler;
-    unsigned short TempRaumMK2
+    unsigned short TempRaumMK2;
     unsigned short VorlaufMK1;
     unsigned short VorlaufMK2;
     unsigned short TempAussen;
@@ -49,6 +49,9 @@ typedef union {
 } Data_Packet;
 
 
-
+typedef struct  {
+    unsigned char  id;
+    const char* topic ;
+} sh20entry;
 
 #endif

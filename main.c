@@ -1,4 +1,4 @@
-//****************************************************************************
+
 // main.c
 //
 // based on work of (c) Hewell Technology Ltd. 2014
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     printf("etash20-collector "GIT_VERSION"\n");
 
     Data_Packet packet;
-    PVBUS_V1_CMD pPacket = (PVBUS_V1_CMD)&serial_buffer[0];
+    //PVBUS_V1_CMD pPacket = (PVBUS_V1_CMD)&serial_buffer[0];
     unsigned char i = 0;
     int framedata = 0;          // 1 solange Daten eines Frames empfangen werden
     int frameready = 0;         // sobald } empfangen wird ist der Frame fertig
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 //Initialisierung der der CONFIG-Struktur, alles auf 0, false, NULL
 // damit der Initial-Zustand definiert ist.
     CONFIG cfg = {
-        .serial_port = NULL,
+        .device = NULL,
         .delay = 0,
 
         .database = NULL,
@@ -174,11 +174,11 @@ int main(int argc, char *argv[])
     }
 
     // last option is the serial port if no config file is used
-    if (cfg.serial_port == NULL)
+    if (cfg.device == NULL)
     {
         if (argc > 2)
         {
-            cfg.serial_port = argv[argc - 1];
+            cfg.device = argv[argc - 1];
         }
         else
         {
@@ -196,14 +196,14 @@ int main(int argc, char *argv[])
         }
     }
 #endif
-   // start:
+start:
     i = 0; framedata = 0; packet_displayed = 0; frameready = 0;
     // set index in serial_buffer, sync byte not received, count of published packets, end of data flag
 
     // open serial connection (fn from serial.c)
-    if (!serial_open_port(cfg.serial_port))
+    if (!serial_open_port(cfg.device))
     {
-        printf("Errno(%d) opening serial port %s: %s\n", errno, cfg.serial_port, strerror(errno));
+        printf("Errno(%d) opening serial port %s: %s\n", errno, cfg.device, strerror(errno));
         return 2;
     }
     if (!serial_set_baud_rate(19200))
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
         
 
            }  // END if (serial_buffer[i]  == '{')
-           if (framedata == 1 && serial_buffer[i] == '}'))
+           if (framedata == 1 && serial_buffer[i] == '}')
            {
              frameready = 1;
            }

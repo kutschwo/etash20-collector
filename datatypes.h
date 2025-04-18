@@ -15,37 +15,28 @@
 #pragma pack(1)
 typedef union {
   struct {
-    unsigned short TuerKontakt;
-    unsigned short RpmGeblaese;
-    unsigned short TempKesssel;
-    unsigned short RuecklKessel;
-    unsigned short PufferUnten;
-    unsigned short PufferMitte;
-    unsigned short PufferOben;
-    unsigned short TempBoiler;
-    unsigned short TempAbgas;
-    unsigned short LuftOben;
-    unsigned short LuftUnten;
-    unsigned short MK1Modus;
-    unsigned short MK1Pumpe;
-    unsigned short NichtBekannt_1;
-    unsigned short TempSolarBoiler;
-    unsigned short TempRaumMK2;
-    unsigned short VorlaufMK1;
-    unsigned short VorlaufMK2;
-    unsigned short TempAussen;
-    unsigned short PufferProz;
-    unsigned short AndersTuerOffen;
-    unsigned short VorlaufMK3;
-    unsigned short RaumMK4;
-    unsigned short VorlaufMK4;
-    unsigned short VorlaufBWT;
-    unsigned short MitteBWT;
-    unsigned short Brenner;
-    unsigned short BoilerSolarOben;
-    unsigned short TempBrauchwasser;
+    unsigned short TuerKontakt_003;
+    unsigned short RpmGeblaese_007;
+    unsigned short TempKesssel_008;
+    unsigned short TempRueckl_009;
+    unsigned short PufferUnten_010;
+    unsigned short PufferMitte_011;
+    unsigned short PufferOben_012;
+    unsigned short TempAbgas_015;
+    unsigned short LuftOben_016;
+    unsigned short LuftUnten_017;
+    unsigned short unknown_031;
+    unsigned short TagNacht_039;
+    unsigned short MK1_Pumpe_043;
+    unsigned short NK1_Vorlauf_068;
+    unsigned short TempAussen_070;
+    unsigned short Pufferladung_075;
+    unsigned short unknown_076;
+    unsigned short unknown_197;
+    unsigned short unknown_198;
+    unsigned short unknown_212;
   } etash20Pkt;
-  unsigned char asBytes[28];
+  unsigned char asBytes[40];
 } Data_Packet;
 
 

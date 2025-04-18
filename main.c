@@ -231,7 +231,6 @@ start:
         
         cfg.withSql = true;
     }    
-
     if (cfg.verbose)
     {
         printf("Setting baudrate...\n");

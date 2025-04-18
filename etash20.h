@@ -6,9 +6,11 @@
 // ETA SH20 Scheitholzkessel über RS232 SMS-Schnittstelle
 // Konstanten, Listen, etc.
 //*******************************************************************************************************************
-#ifndef ETA_SH_20_H
+//#ifndef ETASH20_H
 
-#define ETA_SH_20_H
+//#define ETASH20_H
+
+#pragma once
 
 #include "datatypes.h"
 
@@ -25,9 +27,8 @@ static const int FirstData = 5;        // Nutzdaten ab Byte Nr 6
 static const int EtaBaudRate = 19200;
 
 
+
 static const unsigned char MsgStart[3]          = {'{','M','C'}; // Jede Anfrage an den Kessel bginnt mit diesen Zeichen.
-unsigned char query[110];                        // per Definition werde nie mehr als 106 Byte benötigt.
-unsigned char answer[110];
 
 // Vordefininierte Nachricht zum stoppen der Datenübertragung
 static const unsigned char StopMsg[6]    = {'{','M','E',0,0,'}'};                   // Dieser Befehl stoppt die Datenübertragung des eta-Kessels
@@ -338,4 +339,4 @@ unsigned char EtaChkSum(unsigned char data[], int numvals);
 // Erzeugung eines kompletten Anforderungsstrings
 int MakeEtaRequest(int numvals, unsigned char refreshtime, unsigned char start_idx, unsigned char node, unsigned char* request );
 
-#endif
+//#endif

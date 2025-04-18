@@ -20,7 +20,7 @@ Seit ca. 2012 gibt es eine neue Elektronik, die eine Ethernet-Schnittstelle mit 
 Installiere die notwendigen Pakete (raspbian, Debian)
 ```shell 
 $ apt update
-$ apt install install git build-essential cmake libsqlite3-dev sqlite libpaho-mqtt-dev
+$ apt install git build-essential cmake libsqlite3-dev sqlite3 libpaho-mqtt-dev libcjson-dev libcurl4-gnutls-dev
 ```
 
 Andere Distributionen entsprechend Doku.

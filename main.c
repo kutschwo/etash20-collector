@@ -386,6 +386,7 @@ start:
     return 0;
 }
 
+
 void enableVerbose()
 {
     maincfg->verbose = true;

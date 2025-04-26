@@ -46,7 +46,7 @@ char serial_buffer[256];
 CONFIG* maincfg;
 
 //Deklaration der Funktion um einschalten des "gesprächigen" Modus
-void enableVerbose();
+
 
 int main(int argc, char *argv[])
 {
@@ -71,13 +71,14 @@ int main(int argc, char *argv[])
         .withSql = false,
 
         .print_result = true,
-        .verbose = false,
+        .loglevel = 4,
 
         .mqtt_enabled = false,
         .mqtt_user = NULL,
         .mqtt_password = NULL,
         .mqtt_server = NULL,
-        .mqtt_base_topic = NULL,
+        .mqtt_sensor_base = NULL,
+        .mqtt_actor_base = NULL,
         .mqtt_client_id = NULL,
 
         .homeassistant_enabled = false,
@@ -103,7 +104,8 @@ int main(int argc, char *argv[])
 
             if (strcmp("-v", option) == 0 || strcmp("--verbose", option) == 0)
             {
-                cfg.verbose = true;
+                cfg.loglevel = 2;
+                log_set_level(LOG_INFO);
             // if set, activate detailed output 
             }
 
@@ -214,33 +216,23 @@ start:
         // if the filename for sqlite db ist given, open it.
     if (cfg.database != NULL)
     {
-        if (cfg.verbose)
-        {
-            printf("Opening database %s\n", cfg.database);
-        }
+      log_info("Opening database %s", cfg.database);
+      if (!sqlite_open(cfg.database))
+      {
+        return 6;
+      }
 
-        if (!sqlite_open(cfg.database))
-        {
-            return 6;
-        }
-
-        if (firstLoop) // at first run of the main loop check for db, etc.
-        {
-            sqlite_create_table();            
-        }
-        
+      if (firstLoop) // at first run of the main loop check for db, etc.
+      {
+        sqlite_create_table();            
+      }
         cfg.withSql = true;
     }    
-    if (cfg.verbose)
-    {
-        printf("Setting baudrate...\n");
-    }
-
-
+    log_info("Setting baudrate...", "")
 
     if (cfg.mqtt_enabled)
     {
-        if (cfg.verbose)
+        if (cfg.loglevel == 2)
         {
             printf("Connecting to mqtt server...\n");
         }
@@ -248,7 +240,7 @@ start:
     	reconnect_mqtt(&cfg);
     }
 
-    if (cfg.verbose)
+    if (cfg.loglevel == 2)
     {
         printf("Collecting data...\n");
     }
@@ -256,7 +248,7 @@ start:
     do
     {    
 // exit when got Ctrl C
-        if (caughtSigQuit(enableVerbose))
+        if (caughtSigQuit(log_set_level(LOG_INFO))
         {
             break;
         }
@@ -278,12 +270,12 @@ start:
             serial_buffer[0] = serial_buffer[i];
             i=0;
             framedata = 1;
-            if (cfg.verbose)
+            if (cfg.loglevel == 2)
             {
                 printf("\nStart Byte { received.\n");
             }
             // print Byte when verbose is on, line wrap after 16 bytes
-            if (cfg.verbose)
+            if (cfg.loglevel == 2)
             {
               printf("%02x ", serial_buffer[i]);
               if (i != 0 && i % 16 == 0)
@@ -300,14 +292,14 @@ start:
            }
            i++;  
         } while (frameready == 0) ; // END do .. while (frameready == 0) 
-        if ( cfg.verbose)
+        if ( cfg.logelvel == 2)
           {
             printf("\nSH20 frame received\n");
           }
 #if __SQLITE__
           if (cfg.withSql)
           {
-            if (cfg.verbose) 
+            if (cfg.loglevel == 2) 
             {
               printf("\nWriting to database\n");
             }
@@ -320,7 +312,7 @@ start:
           }
                           if (cfg.mqtt_enabled)
                 {
-                    if (cfg.verbose) 
+                    if (loglevel == 2) 
                     {
                         printf("\nPublishing to mqtt broker\n");
                     }
@@ -332,7 +324,7 @@ start:
 #ifdef __HOASTNT__
                 if (cfg.homeassistant_enabled)
                 {
-                    if (cfg.verbose) 
+                    if (cfg.loglevel == 2) 
                     {
                         printf("\nUpdating homeassistant\n");
                     }
@@ -386,7 +378,3 @@ start:
 }
 
 
-void enableVerbose()
-{
-    maincfg->verbose = true;
-}

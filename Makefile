@@ -3,7 +3,7 @@
 ############
 
 # C source files
-SOURCES = config.c  etash20.c  kbhit.c   mqtt.c  serial.c  sqlite.c homeassistant.c main.c
+SOURCES = log.c config.c  etash20.c  kbhit.c   mqtt.c  serial.c  sqlite.c homeassistant.c main.c
 
 # Optimization
 OPT = -O3 -flto

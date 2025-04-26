@@ -22,7 +22,8 @@ MQTTClient client;
 bool already_connected = false;
 
 char* last_will_topic = NULL;
-const char* base_topic = NULL;
+const char* mqtt_sensor_base = NULL;
+//const char* mqtt_actor_base = NULL;
 
 int reconnect_mqtt(const CONFIG* cfg)
 {
@@ -31,12 +32,12 @@ int reconnect_mqtt(const CONFIG* cfg)
         return true;
     }
 
-    base_topic = cfg->mqtt_base_topic;
+    mqtt_sensor_base = cfg->mqtt_sensor_base;
 
     if (last_will_topic == NULL)
     {
-        last_will_topic = malloc(strlen(base_topic) + strlen(WILL_TOPIC) + 1);
-        sprintf(last_will_topic, "%s%s", base_topic, WILL_TOPIC);
+        last_will_topic = malloc(strlen(mqtt_sensor_base) + strlen(WILL_TOPIC) + 1);
+        sprintf(last_will_topic, "%s%s", mqtt_sensor_base, WILL_TOPIC);
     }
 
     MQTTClient_willOptions last_will = MQTTClient_willOptions_initializer;
@@ -93,8 +94,8 @@ void publish_str(const char *topic, const char *payload)
     pubmsg.qos = QOS;
     pubmsg.retained = 1;
 
-    char* fullTopic = malloc(strlen(base_topic) + 1 + strlen(topic) + 1);
-    strcpy(fullTopic, base_topic);
+    char* fullTopic = malloc(strlen(mqtt_sensor_base) + 1 + strlen(topic) + 1);
+    strcpy(fullTopic, mqtt_sensor_base);
     strcat(fullTopic, "/");
     strcat(fullTopic, topic);
     printf("fullTopic: %s\n", fullTopic);

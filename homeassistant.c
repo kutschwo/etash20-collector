@@ -69,8 +69,8 @@ bool homeassistant_init(CONFIG* cfg)
     free(bearer);
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    if (cfg->verbose)
+    
+    if (cfg->loglevel == 2)
     {
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     }

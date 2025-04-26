@@ -8,10 +8,16 @@
 // 
 //*******************************************************************************************************************
 
-#ifndef DATATYPES_H
-#define DATATYPES_H
+#pragma once
 
+//static int cfg_verbose = 0;
 
+// Union aus einer Struktur und als Byte-Array
+// Die Namen der Element der Struktur beziehen sich auf Namen der Werte
+// aus der Protokoll-Spezifikaton der Firma ETA Heiztechnik aus Österreich https://www.eta.co.at/
+// Union of a struct and a byte-array
+// The Names of the elements regards to the names of the values out of
+// the protocoll specification of company ETA Heiztechnik in Austria https://www.eta.co.at/
 #pragma pack(1)
 typedef union {
   struct {
@@ -45,4 +51,3 @@ typedef struct  {
     const char* topic ;
 } sh20entry;
 
-#endif

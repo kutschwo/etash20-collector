@@ -3,7 +3,7 @@
 ############
 
 # C source files
-SOURCES = log.c config.c  etash20.c  kbhit.c   mqtt.c  serial.c  sqlite.c homeassistant.c main.c
+SOURCES = log.c config.c  etash20.c  kbhit.c   mqtt.c  serial.c  sqlite.c sh20prnfuncs.c main.c
 
 # Optimization
 OPT = -O3 -flto
@@ -18,16 +18,8 @@ TARGET = etash20-collector
 GIT_VERSION := "$(shell git describe --long --always --tags)"
 
 CC = gcc
-CFLAGS = -std=gnu11 $(OPT) -c -Wall -Ipaho.mqtt.c/src/  -DGIT_VERSION=\"$(GIT_VERSION)\"
+CFLAGS = -std=gnu11 $(OPT) -c -Wall -Ipaho.mqtt.c/src/  -DGIT_VERSION=\"$(GIT_VERSION)\" -DLOG_USE_COLOR
 
-# uncomment next line if you have
-# Resol DeltaSol E Controller
-# Citrin Solar CS 3.2 is identical, but branded by company Citrin Solar Moosburg (Germany)
-CFLAGS += -DDS_E_CONTROLLER
-
-# uncomment next item if you have a
-# Resol DeltaSol BS Plus
-#CFLAGS += -DDS_BS_PLUS
 # uncomment next line for Json config file support
 CFLAGS += -D__JSON__
 
@@ -35,11 +27,8 @@ CFLAGS += -D__JSON__
 # a sqlite3 database
 CFLAGS += -D__SQLITE__
 
-# uncomment if you want compile
-# homassistant support
-CFLAGS += -D__HOASTNT__
-
-LDFLAGS = -LcJSON/build/ -Lpaho.mqtt.c/build/src/ $(OPT) -fuse-linker-plugin -lcurl -lsqlite3 -l:libpaho-mqtt3c.a -lcjson -lpthread -lm
+LDFLAGS = -LcJSON/build/ -Lpaho.mqtt.c/build/src/ $(OPT) -fuse-linker-plugin -lcurl -lsqlite3 -lpaho-mqtt3c -lcjson -lpthread -lm
+#-l:libpaho-mqtt3c.a 
 OBJECTS = $(SOURCES:%.c=$(OBJDIR)/%.o)
 
 REMOVE    = rm -f

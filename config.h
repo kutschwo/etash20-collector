@@ -33,6 +33,7 @@ typedef struct {
     // 4: LOG_ERROR
     // 5: LOG_FATAL
     int loglevel;
+    const char* logfile;
     // if true data will be sent to MQTT server
     bool mqtt_enabled;
     // user for mqtt server
@@ -47,10 +48,6 @@ typedef struct {
     const char* mqtt_actor_base;
     //ID-string to identify the client
     const char* mqtt_client_id;
-    // true to enable homassitant suppor
-    // alwas false as i have no homeassistant
-    bool homeassistant_enabled;
-    const char* homeassistant_entity_id_base;
 } CONFIG;
 
 // function to read values from the JSON file

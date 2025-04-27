@@ -18,11 +18,12 @@
 
 
 static sqlite3 *db = NULL; // var for sqlite3 database struct
-static char *dbpath = NULL; // path to datase file
+static char* dbpath = NULL; // path to datase file
 
 // func to print sqlite error messages
 void sqlite_print_error(char* error_msg)
 {
+  log_trace("Started: sqlite_print_error msg: %s",error_msg);
   printf("SQL error: %s\n", error_msg);
   log_error("sqlite3 SQL error: %s\n", error_msg);
   sqlite3_free(error_msg);
@@ -31,6 +32,7 @@ void sqlite_print_error(char* error_msg)
 // func to oben sqlite3 database with error-handling
 bool sqlite_open(const char *path)
 {
+  log_trace("Started sqlite_open..","");
   if (sqlite3_open(path, &db) != 0)
   {
     printf("Can't open database: %s\n", sqlite3_errmsg(db));
@@ -39,7 +41,6 @@ bool sqlite_open(const char *path)
     return false;
   }
   dbpath = path;
-  //dbpaht = sqlite3_filename(db, "");
   log_info("sqlite-database opend: %s",dbpath);
   return true;
 }
@@ -47,6 +48,7 @@ bool sqlite_open(const char *path)
 // Close the sqlite3 database connection
 void sqlite_close()
 {
+  log_trace("Started sqlite_close", "");
   if (db != NULL)
   {
     sqlite3_close(db);
@@ -57,12 +59,14 @@ void sqlite_close()
 // execute a SQL statement and handle error message
 bool sqlite_exec(char* sql)
 {
+  log_trace("Start sqlite_exec ....", "");
   char *error_msg;
   if (sqlite3_exec(db, sql, NULL, 0, &error_msg) != SQLITE_OK) {
     sqlite_print_error(error_msg);
     log_error("sqlite3 problem %s",error_msg);
     return false;
   }  // END if (sqlite3_exec(db, sql, NULL, 0, &error_msg) != SQLITE_OK) {
+  log_trace("sqlite_exec successfull excuted SQL statement: %s", sql);
   return true;
 } // END bool sqlite_exec(char* sql)
 
@@ -73,6 +77,7 @@ bool sqlite_insert_data(Data_Packet* packet)
   char *error_msg;
   char sql_buffer[512];
   //    short dow, h, m;
+  log_trace("sqlite_instert_data started...","");
   sprintf(sql_buffer, "INSERT INTO data ");
   sprintf(sql_buffer,"(time, 003_0_bei_Tuer_offen, 007_RpmGeblaese, 008_TempKessel, 009 TempRueckl, 010_PufferUnten, 011_PufferMitte, 012_PufferOben, 015_TempAbgas, 016_LuftOben, 017_LuftUnten, 031_unknown, 039_TagNacht_evtl, 043_Pumpe_MK1_evtl, 068_Vorlauf_MK1, 070_TempAussen, 075_Pufferladung, 076_unknown, 197_unknown, 198_unknown, 212_unknown  ) VALUES " );
   sprintf(sql_buffer, "CURRENT_TIMESTAMP, "); 
@@ -107,6 +112,7 @@ bool sqlite_insert_data(Data_Packet* packet)
     log_error("sqlite3 problem: %s", error_msg);
     return false;
   } // END if (sqlite3_exec(db, sql_buffer, NULL, 0, &error_msg) != 0)
+  log_trace("data successfull insterted SQL-Statement: %s",sql_buffer);
   return true;
 } // END bool sqlite_insert_data(Data_Packet* packet)
 
@@ -138,14 +144,14 @@ bool sqlite_create_table()
     "\"197_unknown\"          INTEGER NOT NULL,"
     "\"198_unknown\"          INTEGER NOT NULL,"
     "\"212_unknown\"          INTEGER NOT NULL);";
-  log_info("sqlite3 CREATE TABLE data: %s", sql_create_table);
+  log_trace("sqlite3 CREATE TABLE data: %s", sql_create_table);
   if (sqlite3_exec(db, sql_create_table, NULL, 0, &error_msg) != 0)
   {
     sqlite_print_error(error_msg);
     log_error("sqlite3 problem: %s", error_msg);
     return false;
   } // END if (sqlite3_exec(db, sql_create_table, NULL, 0, &error_msg) != 0)
-  log_info("sqlite3 initial table creating: %s", " DONE!");
+  log_trace("sqlite3 table data created: %s", sql_create_table);
   return true;
 } // END bool sqlite_create_table()
 

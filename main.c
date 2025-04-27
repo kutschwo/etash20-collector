@@ -1,4 +1,3 @@
-
 // main.c
 //
 // based on work of (c) Hewell Technology Ltd. 2014
@@ -7,7 +6,7 @@
 // Wolfgang Kutscherauer 2024
 // reused to deal with wood-heating ETA SH20
 //
-// last change 06.05.2024 by Wolfgang Kutscherauer kutschi@dingolfing.org
+// last change 27.04.2025 by Wolfgang Kutscherauer kutschi@dingolfing.org
 //
 //****************************************************************************
 // system includes
@@ -30,9 +29,8 @@
 #include "serial.h"
 #include "etash20.h"
 #include "mqtt.h"
-#ifdef __HOASTNT__
-    #include "homeassistant.h"
-#endif
+#include "sh20prnfuncs.h"
+#include "log.h"
 #ifdef __SQLITE__
     #include "sqlite.h"
 #endif
@@ -44,13 +42,18 @@
 char serial_buffer[256];
 
 CONFIG* maincfg;
+CONFIG cfg;
 
-//Deklaration der Funktion um einschalten des "gesprächigen" Modus
+char CfgFileName[256];  // String for filename of json config-file
+int len;                // length of argument string
 
+// need helping function as void 
+void enableVerbose();
 
 int main(int argc, char *argv[])
 {
     printf("etash20-collector "GIT_VERSION"\n");
+    log_info("etash20-collector "GIT_VERSION"");
 
     Data_Packet packet;
     //PVBUS_V1_CMD pPacket = (PVBUS_V1_CMD)&serial_buffer[0];
@@ -60,195 +63,117 @@ int main(int argc, char *argv[])
     int loopforever = 0;        // wenn das Programm als Dienst läuft = 1 für Endlos-Betrieb.
     int packet_displayed = 0;
     bool firstLoop = true;      // wenn das Programm das 1. mal durchlaufen wird --> Einrichtung DB, etc.
+    
+// parse command line options
+    for (int idx = 1; idx < argc; ++idx)
+    {
+        char *option = argv[idx];
+        if (strcmp("-c", option) == 0 || strcmp("--config", option) == 0)
+        {
+               // printf("Config file is not supported\\");
+               // return 7;
+                if (argc <= idx + 1)
+                {
+                    printf("Missing config file\n");
+                    log_fatal("Missing config file");
+                    return 7;
+                }
+                // Use next option as file name/path
+                idx++;
+                len = strlen(argv[idx]);
+                strncpy(CfgFileName,argv[idx],len);
+                CfgFileName[len]='\0';
+                //printf("ConfigFile: %s\n\n", CfgFileName);
+
+        }// END if for --config
+            
+        if (strcmp("-h", option)==0 || strcmp("--help", option)==0)
+        {
+            print_help();
+            return 0;
+        } // END if for help message
+    } // END for (int idx = 1; idx < argc; ++idx)
 
 //Initialisierung der der CONFIG-Struktur, alles auf 0, false, NULL
 // damit der Initial-Zustand definiert ist.
-    CONFIG cfg = {
-        .device = NULL,
-        .delay = 0,
+    cfg.device = NULL;
+    cfg.delay = 0;
+    cfg.database = NULL;
+    cfg.withSql = false;
+    cfg.print_result = true;
+    cfg.loglevel = 4;
+    cfg.logfile = NULL;
+    cfg.mqtt_enabled = false;
+    cfg.mqtt_user = NULL;
+    cfg.mqtt_password = NULL;
+    cfg.mqtt_server = NULL;
+    cfg.mqtt_sensor_base = NULL;
+    cfg.mqtt_actor_base = NULL;
+    cfg.mqtt_client_id = NULL;
 
-        .database = NULL,
-        .withSql = false,
+// set pointer to cfg struct
+maincfg = &cfg;
 
-        .print_result = true,
-        .loglevel = 4,
-
-        .mqtt_enabled = false,
-        .mqtt_user = NULL,
-        .mqtt_password = NULL,
-        .mqtt_server = NULL,
-        .mqtt_sensor_base = NULL,
-        .mqtt_actor_base = NULL,
-        .mqtt_client_id = NULL,
-
-        .homeassistant_enabled = false,
-        .homeassistant_entity_id_base = NULL
-    };
-
-    maincfg = &cfg;
-
-// Wenn die Kommandozeile aus mehr als 2 Objekten (Kommando +  ein Parameter) besteht --> parsen
-    if (argc > 2)
+// parse the JSON config file using parseConfig from config.c
+    if (parseConfig(CfgFileName, &cfg) != 0)
     {
-// parse command line options
-// Schleife über das Array der Zeiger auf die Parameter
-        for (int idx = 1; idx < argc; ++idx)
-        {
-            char *option = argv[idx];
-// 
-            if (strcmp("-f", option)==0 || strcmp("--forever", option)==0)
-            {
-                loopforever = true;
-        // if set repeat forever
-            }
-
-            if (strcmp("-v", option) == 0 || strcmp("--verbose", option) == 0)
-            {
-                cfg.loglevel = 2;
-                log_set_level(LOG_INFO);
-            // if set, activate detailed output 
-            }
-
-            if (strcmp("-m", option) == 0 || strcmp("--mqtt", option) == 0)
-            {
-                cfg.mqtt_enabled = true;
-    // if set enable mqtt 
-            }
-
-            if (strcmp("-d", option)==0 || strcmp("--delay", option)==0)
-            // define the delay between reading Vbus data
-            {
-                if (argc <= idx + 2) {
-                    printf("Missing value for delay option\n");
-                    return 4;
-                }
-
-                // Use next option as delay value
-                idx++;
-                cfg.delay = strtoul(argv[idx], NULL, 10);
-            }
-
-            #ifdef __SQLITE__
-                if (strcmp("--db", option)==0)
-                {
-                    if (argc <= idx + 2)
-                    {
-                        printf("Missing value for sqlite db path\n");
-                        return 5;
-                    }
-
-                    // Use next option as path to sqlite database
-                    idx++;
-                    cfg.database = argv[idx];
-                }
-            #endif
-
-            if (strcmp("--no-print", option) == 0)
-            // supress any output to stdout / console
-            {
-                cfg.print_result = false;
-            }
-
-            if (strcmp("-c", option) == 0 || strcmp("--config", option) == 0)
-            {
-                #ifndef __JSON__
-                    printf("Config file is not supported");
-                    return 7;
-                #else
-                    if (argc <= idx + 1)
-                    {
-                        printf("Missing config file\n");
-                        return 7;
-                    }
-
-                    // Use next option as file name/path
-                    idx++;
-
-                    if (parseConfig(argv[idx], &cfg) != 0)
-                    {
-                        printf("Error parsing config file\n");
-                        return 7;
-                    }
-
-                #endif
-            }
-        }
+        printf("Error parsing config file\n");
+        log_fatal("Fatal error parsing config file %s",CfgFileName);
+        print_help();
+        return 7;
     }
 
-    // last option is the serial port if no config file is used
-    if (cfg.device == NULL)
-    {
-        if (argc > 2)
-        {
-            cfg.device = argv[argc - 1];
-        }
-        else
-        {
-            printf("No serial port set");
-            return 2;
-        }
-    }
-#ifdef __HOASTNT__
-    if (cfg.homeassistant_enabled)
-    {
-        if (!homeassistant_init(&cfg))
-        {
-            printf("Error initializing homeassistant");
-            return 20;
-        }
-    }
-#endif
+
 start:
     i = 0; framedata = 0; packet_displayed = 0; frameready = 0;
     // set index in serial_buffer, sync byte not received, count of published packets, end of data flag
 
     // open serial connection (fn from serial.c)
+    log_trace("Start opening serial device %s", cfg.device);
     if (!serial_open_port(cfg.device))
     {
+        log_fatal("Fatal error opening serial port %s, error: %d, %s", cfg.device, errno, strerror(errno) );
         printf("Errno(%d) opening serial port %s: %s\n", errno, cfg.device, strerror(errno));
         return 2;
     }
+    log_trace("Start setting baud rate to: %d", 19200);
     if (!serial_set_baud_rate(19200))
     {
+        log_fatal("Failed to set baud rate: %s", serial_get_error());
         printf("Failed to set baud rate: %s\n", serial_get_error());
         return 3;
     }
+    log_trace("Baud rate for %s ist set to %d", cfg.device, 19200);
         // if the filename for sqlite db ist given, open it.
     if (cfg.database != NULL)
     {
       log_info("Opening database %s", cfg.database);
       if (!sqlite_open(cfg.database))
       {
+        log_fatal("sqlite database %s could not be opend, stopping", cfg.database);
         return 6;
       }
 
       if (firstLoop) // at first run of the main loop check for db, etc.
       {
+        log_trace("First start of software, creating table on %s", cfg.database);
         sqlite_create_table();            
       }
         cfg.withSql = true;
     }    
-    log_info("Setting baudrate...", "")
-
+    
     if (cfg.mqtt_enabled)
     {
-        if (cfg.loglevel == 2)
-        {
-            printf("Connecting to mqtt server...\n");
-        }
-
-    	reconnect_mqtt(&cfg);
+      log_info("Connecting to mqtt server %s",cfg.mqtt_server);
+      reconnect_mqtt(&cfg);
     }
-
-    if (cfg.loglevel == 2)
-    {
-        printf("Collecting data...\n");
-    }
+    log_info("collecting data from %s", cfg.device);
+    
 // start main loop
     do
     {    
 // exit when got Ctrl C
-        if (caughtSigQuit(log_set_level(LOG_INFO))
+        if (caughtSigQuit(enableVerbose))
         {
             break;
         }
@@ -270,12 +195,9 @@ start:
             serial_buffer[0] = serial_buffer[i];
             i=0;
             framedata = 1;
-            if (cfg.loglevel == 2)
-            {
-                printf("\nStart Byte { received.\n");
-            }
+            log_info("received start byte from %s", cfg.device);
             // print Byte when verbose is on, line wrap after 16 bytes
-            if (cfg.loglevel == 2)
+            if (cfg.loglevel == LOG_INFO)
             {
               printf("%02x ", serial_buffer[i]);
               if (i != 0 && i % 16 == 0)
@@ -292,13 +214,13 @@ start:
            }
            i++;  
         } while (frameready == 0) ; // END do .. while (frameready == 0) 
-        if ( cfg.logelvel == 2)
-          {
-            printf("\nSH20 frame received\n");
-          }
+
+        log_info("SH20 frame received from %",cfg.device);
+
 #if __SQLITE__
           if (cfg.withSql)
           {
+            log_info("Writing values to sqlite database %s", cfg.database);
             if (cfg.loglevel == 2) 
             {
               printf("\nWriting to database\n");
@@ -310,35 +232,23 @@ start:
           {
             printf("\nPrint_result nicht implementier.\n");
           }
-                          if (cfg.mqtt_enabled)
-                {
-                    if (loglevel == 2) 
-                    {
-                        printf("\nPublishing to mqtt broker\n");
-                    }
-                    // publish_mqtt("tkol", packet.DSECtrlPkt.TempSensor01 * 0.1, "%.1f");
-                    printf("\nPublishing to mqtt broker nicht implementier.\n");
+          if (cfg.mqtt_enabled)
+            {
+              log_info("Publishing to mqtt broker");
+              // publish_mqtt("tkol", packet.DSECtrlPkt.TempSensor01 * 0.1, "%.1f");
+              log_error("Publishing to mqtt broker nicht implementiert.");
           } 
           
           
-#ifdef __HOASTNT__
-                if (cfg.homeassistant_enabled)
-                {
-                    if (cfg.loglevel == 2) 
-                    {
-                        printf("\nUpdating homeassistant\n");
-                    }
-
-                    publish_homeassistant(&cfg, &packet);
-                } //end if (cfg.homeassistant_enabled)
-#endif
 
     } while (loopforever == true || packet_displayed == 0); //END of main do .. while loop
 
     serial_close_port();
 
     #if __SQLITE__
-        sqlite_close();
+    log_trace("Closing sqlite3 db %s",cfg.database);
+    sqlite_close();
+        
     #endif
 
     if (cfg.delay > 0)
@@ -368,13 +278,13 @@ start:
         firstLoop = false;
         goto start;
     }
-#ifdef __HOASTNT__
-    if (cfg.homeassistant_enabled)
-    {
-        homeassistant_cleanup();
-    }
-#endif
+
     return 0;
 }
 
 
+void enableVerbose()
+{
+    maincfg->loglevel = 2;
+    log_set_level(LOG_INFO);
+}

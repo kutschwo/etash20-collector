@@ -3,6 +3,7 @@
 //
 // (c) Hewell Technology Ltd. 2014
 // functions to handle Ctrl-C an other keys
+// 2025 Wolfgang Kutscherauer added log functions
 //
 //****************************************************************************
 
@@ -14,6 +15,7 @@
 #include <unistd.h>
 
 #include "kbhit.h"
+#include "log.h"
 
 struct termios oldtermios;
 
@@ -37,8 +39,10 @@ int ttyraw(int fd)
        One byte at a time input (MIN=1, TIME=0).
     */
     struct termios newtermios;
+    log_trace("Started ttyraw");
     if(tcgetattr(fd, &oldtermios) < 0)
     {
+        log_trace("No Key hit, return %d", -1);
         return(-1);
     }
 
@@ -91,14 +95,18 @@ int ttyraw(int fd)
 
 int ttyreset(int fd)
 {
+    log_trace("Started ttyreset", "");
     if(tcsetattr(fd, TCSAFLUSH, &oldtermios) < 0)
         return(-1);
 
     return(0);
 }
 
+// catching a signal
+// reacting to signal SIGUSR1
 void sigcatch(int sig)
 {
+    log_trace("Started sigcatch", "");
     if (sig == SIGUSR1)
     {
         usr1Callback();
@@ -112,6 +120,7 @@ void sigcatch(int sig)
 
 int caughtSigQuit(void (*userSignalCallback)())
 {
+    log_trace("Started caughtSigQuit", "");
     usr1Callback = *userSignalCallback;
 
     signal(SIGUSR1, sigcatch);

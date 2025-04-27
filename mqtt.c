@@ -2,17 +2,20 @@
 // mqtt.c
 //
 // Tobias Tangemann 2020
+// Wolfgang Kutscherauer 2025 logging eingbaut.
 // 
 // function to publish data to MQTT server
 // implementation
 //
 //****************************************************************************
 #include "mqtt.h"
+#include "log.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "MQTTClient.h"
+#include <MQTTClient.h>
+
 
 #define QOS         1
 #define TIMEOUT     3000L
@@ -68,6 +71,7 @@ int reconnect_mqtt(const CONFIG* cfg)
     if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
     {
         printf("Failed to connect, return code %d\n", rc);
+        log_error("Failed to connect, return code %d", rc);
         return false;
     }
 
@@ -79,6 +83,7 @@ int reconnect_mqtt(const CONFIG* cfg)
 
 void disconnect_mqtt()
 {
+    log_trace("start disconnect_mqtt ....", "");
     already_connected = false;
     MQTTClient_disconnect(client, TIMEOUT);
     MQTTClient_destroy(&client);
@@ -88,6 +93,7 @@ void disconnect_mqtt()
 
 void publish_str(const char *topic, const char *payload)
 {
+    log_trace("start: publish_str(const char *topic, const char *payload) ....", "");
     MQTTClient_message pubmsg = MQTTClient_message_initializer;
     pubmsg.payload = (char*)payload;
     pubmsg.payloadlen = strlen(payload);
@@ -105,6 +111,7 @@ void publish_str(const char *topic, const char *payload)
     MQTTClient_waitForCompletion(client, token, TIMEOUT);
 
     free(fullTopic);
+    log_trace("publish_str %s %s", topic, payload);
 }
 
 void publish_int(const char *topic, int payload)
@@ -112,6 +119,7 @@ void publish_int(const char *topic, int payload)
     char buffer[32];
     snprintf(buffer, 32, "%d", payload);
     publish_str(topic, buffer);
+    log_trace("publish_int %s %s", topic, buffer);
 }
 
 void publish_double(const char *topic, double payload, const char *format)
@@ -119,4 +127,5 @@ void publish_double(const char *topic, double payload, const char *format)
     char buffer[32];
     snprintf(buffer, 32, format, payload);
     publish_str(topic, buffer);
+    log_trace("publish_double %s %s", topic, buffer);
 }

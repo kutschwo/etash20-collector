@@ -19,7 +19,6 @@
 
 int getParameter(cJSON* json, CONFIG* cfg);
 int getMqttParameter(const cJSON* mqtt, CONFIG* cfg);
-int getHomeassistantParameter(const cJSON* hass, CONFIG* cfg);
 
 int parseConfig(const char* file, CONFIG* cfg)
 {
@@ -29,7 +28,7 @@ int parseConfig(const char* file, CONFIG* cfg)
     if (fp == NULL)
     {
         printf("Error opening config file: %s\n", file);
-        log_error("Error opening config file: %s", file);
+        log_fatal("fatal error opening config file: %s -->stopping", file);
         return 8;
     }
 
@@ -50,7 +49,7 @@ int parseConfig(const char* file, CONFIG* cfg)
         if (error_ptr != NULL)
         {
             fprintf(stderr, "Error before: %s, returncode 9", error_ptr);
-            log_error("Error before: %s", error_ptr);
+            log_fatal("Error before: %s", error_ptr);
         }
 
         status = 9;
@@ -76,21 +75,10 @@ int parseConfig(const char* file, CONFIG* cfg)
         goto end;
     }
 
-    const cJSON* hass = cJSON_GetObjectItem(json, "homeassistant");
-    if (hass == NULL || !cJSON_IsObject(hass)) {
-
-        printf("Invalid value for homeassistant\n");
-        log_error("Invalid value for homeassistant, ", "returncode 11");
-        status = 11;
-        goto end;
-    }
-
-    status = getHomeassistantParameter(hass, cfg);
 
 end:
     cJSON_Delete(json);
     free(config);
-    log_trace("getHomeassistantParameter returncode: %d", status);
     return status;
 }
 
@@ -258,32 +246,3 @@ int getMqttParameter(const cJSON* mqtt, CONFIG* cfg)
     return 0;
 }
 
-int getHomeassistantParameter(const cJSON* hass, CONFIG* cfg)
-{
-    cJSON *value;
-
-    // Enabled
-    value = cJSON_GetObjectItem(hass, "enabled");
-    if (value == NULL || !cJSON_IsBool(value))
-    {
-        printf("Invalid value for homeassistant.enabled\n");
-        return 10;
-    }
-
-    cfg->homeassistant_enabled = value->valueint != 0;
-    if (!cfg->homeassistant_enabled) {
-        return 0;
-    }
-
-    // Entity ID
-    value = cJSON_GetObjectItem(hass, "entity_id_base");
-    if (value == NULL || !cJSON_IsString(value))
-    {
-        printf("Invalid value for homeassistant.entity_id_base\n");
-        return 10;
-    }
-
-    cfg->homeassistant_entity_id_base = strdup(value->valuestring);
-
-    return 0;
-}

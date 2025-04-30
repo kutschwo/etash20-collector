@@ -1,12 +1,12 @@
 {
     "testmode" : true,
-    "device": "/dev/ttyUB0",
+    "device": "/dev/ttyUSB0",
     "loopforever": false,
     "delay": 60,
     "_loglevels" : "0: LOG_TRACE, 1: LOG_DEBUG, 2: LOG_INFO, 3: LOG_WARN, 4: LOG_ERROR, 5: LOG_FATAL",
-    "loglevel": 2,
+    "loglevel": 0,
     "withSql": true,
-    "database": "./etash20.db",
+    "database": "etash20.db",
     "print_stdout": true,
     "mqtt": {
         "enabled": true,

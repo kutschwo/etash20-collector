@@ -52,7 +52,7 @@ int len;
 // LogFile
 FILE *logfptr;
 // Num of byte written to serial device
-ssize_t writte;
+ssize_t written;
 // integer return value
 int result;
 
@@ -182,7 +182,7 @@ start:
     }
     log_info("collecting data from %s", cfg.device);
     // write request to eta sh20
-    result = serial_write(StdDataRequest, LenStdReqest);
+    written = serial_write(StdDataRequest, LenStdReqest);
     
 // start main loop
     do

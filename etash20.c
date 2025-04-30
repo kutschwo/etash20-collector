@@ -5,14 +5,18 @@
 // GPL V2
 //++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
+#include <stddef.h>
+#include <stdbool.h>
+#include <linux/serial.h>
 #include "etash20.h"
 #include "log.h"
+#include "serial.h"
 
 // As defined by ETA maximal 106 bytes are possible for query and answer.
 // Per Definition sind max, nur 106 Bytes für Anfrage und Antwort möglich.
 unsigned char query[110];
 unsigned char eta_answer[110];
+int count;
 
 // Calculation of the checsumm of usage-data.
 // sum of all usage-date, then modulo 256 of the sum.
@@ -29,3 +33,6 @@ int MakeEtaRequest(int numvals, unsigned char refreshtime, unsigned char start_i
   log_trace("Start MakeEtaRequest","");
 return 3;
 }
+
+// Send a reqest to the oven to geht the defined data set.
+//int ReqStdDataSet()

@@ -330,7 +330,7 @@ bool serial_set_baud_rate(int rate)
     // next line 1 Bit
     attr.c_cflag &= ~CSTOPB; // clear stop fiel --> one stop Bit
     // next line 2 stop bits
-    attr.c_cflag != CSTOPB;  // set stop field --> two stop Bits
+    attr.c_cflag |= CSTOPB;  // set stop field --> two stop Bits
     if (tcsetattr(fd, TCSANOW, &attr) != 0)
     {
         strncpy(error_str, "Error reading COM port settings", sizeof(error_str));

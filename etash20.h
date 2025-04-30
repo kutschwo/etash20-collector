@@ -12,7 +12,11 @@
 
 #pragma once
 
+#include <stddef.h>
 #include "datatypes.h"
+#include "serial.h"
+#include <stdbool.h>
+#include <linux/serial.h>
 
 #define FRSTDATA 5                  // Die Nutzdaten starten ab Byte 6, Zeitinterval --> 5 weil der Index bei 0 start.
 #define REF_TIME 15                  // Refreshtime, alle n Sekunden werden neue Daten vom Kessel gesendet.
@@ -300,10 +304,14 @@ static const unsigned char heizung_ein_msg[8] = {'{','I','H',0x02,0x10,0x10,0x00
 static const unsigned char heizung_aus_msg[8] = {'{','I','H',0x02,0x20,0x20,0x00,'}'}; //  Schaltet den Kessel aus
 static const unsigned char boiler_laden_msg[8] = {'{','I','H',0x02,0x40,0x40,0x00,'}'}; //  Boiler laden
 static const unsigned char heizung_00_msg[8]   = {'{','I','H',0x02,0x00,0x00,0x00,'}'}; // Nicht dokumentier zum probieren was passiert
-static const int LenModeMsg  = 8 ;
+#define LenModeMsg  8 
 
 // Vordefininierte Anweisung an den Kessel um für Tests Daten zu übertragen.
 static const unsigned char MsgSendBasicData[] = { '{','M','C', 0x19,  0x58, 0x3c, 0x08, 0x00, 0x0a, 0x08, 0x00, 0x0b, 0x08, 0x00, 0x0c, 0x08, 0x00, 0x0f, 0x08, 0x00, 0x44, 0x08, 0x00, 0x46, 0x08, 0x00, 0x03, 0x08, 0x00, 0x27 };
+
+// request for standard set of data as defined in sh20entry mqtt struct
+static const unsigned char StdDataRequest[] = { '{','M','C', 0x3d, 0x3a, 0x3c, 0x08, 0x00, 0x03, 0x08, 0x00, 0x07, 0x08, 0x00, 0x08, 0x08, 0x00, 0x09, 0x08, 0x00, 0x0a, 0x08, 0x00, 0x0b, 0x08, 0x00, 0x0c, 0x08, 0x00, 0x0f, 0x08, 0x00, 0x10, 0x08, 0x00, 0x11, 0x08, 0x00, 0x1f, 0x08, 0x00, 0x27, 0x08, 0x00, 0x2b, 0x08, 0x00, 0x44, 0x08, 0x00, 0x46, 0x08, 0x00, 0x4b, 0x08, 0x00, 0x4c, 0x08, 0x00, 0xc5, 0x08, 0x00, 0xc6, 0x08, 0x00, 0xd4, '}' };
+#define LenStdReqest 67
 
 static const sh20entry sh20mqttid[20] = {
     {  3, "003_0_bei_Tuer_offen"},            // 0
@@ -327,6 +335,19 @@ static const sh20entry sh20mqttid[20] = {
     {198, "198_unknown"},        // 18
     {212, "212_unknown"}         // 19
 };
+
+
+// Berechnung der Checksumme über die Nutzdaten
+// Summe aller Nutzdaten, dann Modulo 256 der Summe
+unsigned char EtaChkSum(unsigned char data[], int numvals);
+
+// Erzeugung eines kompletten Anforderungsstrings
+int MakeEtaRequest(int numvals, unsigned char refreshtime, unsigned char start_idx, unsigned char node, unsigned char* request );
+
+//int SendCommand(unsgined char *request, int length );
+
+
+// Senden 
 
 /*
 unsigned char *bez[256] ={"0 unbekannt", 
@@ -588,11 +609,4 @@ unsigned char *bez[256] ={"0 unbekannt",
 };
 */
 
-// Berechnung der Checksumme über die Nutzdaten
-// Summe aller Nutzdaten, dann Modulo 256 der Summe
-unsigned char EtaChkSum(unsigned char data[], int numvals);
 
-// Erzeugung eines kompletten Anforderungsstrings
-int MakeEtaRequest(int numvals, unsigned char refreshtime, unsigned char start_idx, unsigned char node, unsigned char* request );
-
-//#endif

@@ -41,17 +41,27 @@
 
 char serial_buffer[256];
 
+// Pointer to config
 CONFIG* maincfg;
+// Struct for conifg settings
 CONFIG cfg;
-
-char CfgFileName[256];  // String for filename of json config-file
-int len;                // length of argument string
+// String for filename of json config-file
+char CfgFileName[256];
+// length of argument string
+int len;
+// LogFile
+FILE *logfptr;
+// Num of byte written to serial device
+ssize_t writte;
+// integer return value
+int result;
 
 // need helping function as void 
 void enableVerbose();
 
 int main(int argc, char *argv[])
 {
+;
     printf("etash20-collector "GIT_VERSION"\n");
     log_info("etash20-collector "GIT_VERSION"");
 
@@ -122,7 +132,10 @@ maincfg = &cfg;
         print_help();
         return 7;
     }
-
+    
+    log_set_level(cfg.loglevel);
+    logfptr = fopen(cfg.logfile, "w");
+    result = log_add_fp(logfptr, cfg.loglevel);
 
 start:
     i = 0; framedata = 0; packet_displayed = 0; frameready = 0;
@@ -168,6 +181,8 @@ start:
       reconnect_mqtt(&cfg);
     }
     log_info("collecting data from %s", cfg.device);
+    // write request to eta sh20
+    result = serial_write(StdDataRequest, LenStdReqest);
     
 // start main loop
     do
@@ -175,6 +190,7 @@ start:
 // exit when got Ctrl C
         if (caughtSigQuit(enableVerbose))
         {
+            log_info("Ctrl-C was pressed.","");
             break;
         }
         do // START do .. while (frameready == 0) 

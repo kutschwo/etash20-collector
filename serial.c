@@ -3,8 +3,6 @@
 // serial.c
 //
 // (c) Hewell Technology Ltd. 2014
-// Wolfgang Kutscherauer 2024
-// für ETA SH20 auf 8N2 (2 Stopp-Bits) umgestellt.
 //
 //****************************************************************************
 
@@ -45,8 +43,6 @@ static FILE *log_fp = NULL;
     static int fd = -1;
 #endif
 
-#include "log.h"
-    
 int is_data_available(int fd);
 
 static char error_str[128] = "";
@@ -54,7 +50,6 @@ static char error_str[128] = "";
 //***************************************************************************
 static void debug_log(const uint8_t *buf, uint16_t len, bool out)
 {
-    log_trace("start debug_log ...","");
     if (log_fp != NULL)
     {
         fprintf(log_fp, "%s ", out ? "\n-->" : "<--");
@@ -71,7 +66,6 @@ static void debug_log(const uint8_t *buf, uint16_t len, bool out)
 //***************************************************************************
 void debug_comment(const char *comment, ...)
 {
-    log_trace("start debug_comment", "");
     if (log_fp != NULL)
     {
         va_list ap;
@@ -85,7 +79,6 @@ void debug_comment(const char *comment, ...)
 //***************************************************************************
 const char *serial_get_error(void)
 {
-    log_error("serial error: %s", error_str);
     return error_str;
 }
 
@@ -93,7 +86,7 @@ const char *serial_get_error(void)
 bool serial_open_port(const char *port)
 {
     bool ret = false;
-  log_trace("start serial_open_port %s", port);
+
 #ifdef __WXMSW__
     if (handle == INVALID_HANDLE_VALUE)
     {
@@ -116,19 +109,16 @@ bool serial_open_port(const char *port)
             else
             {
                 strncpy(error_str, "Error opening COM port", sizeof(error_str));
-                log_error("Error opening COM port %s", port);
             }
         }
         else
         {
          strncpy(error_str, "Invalid COM port", sizeof(error_str));
-         log_error("Invalid COM port  %s", port);
         }
     }
     else
     {
         strncpy(error_str, "Port already open", sizeof(error_str));
-        log_error("Port %s already open", port);
     }
 
     log_fp = fopen("debug.log", "w");
@@ -176,7 +166,7 @@ bool serial_set_baud_rate(int rate)
     bool ret = false;
 #ifdef __WXMSW__
     DCB dcb_config;
-  log_trace("start serical_set_baud_rate to %d", rate);
+
     if (handle != INVALID_HANDLE_VALUE)
     {
         if (GetCommState(handle, &dcb_config))
@@ -184,8 +174,7 @@ bool serial_set_baud_rate(int rate)
             dcb_config.BaudRate = rate;
             dcb_config.ByteSize = 8;
             dcb_config.Parity = NOPARITY;
-    // 2 Stop bits for ETA SH20 !!
-            dcb_config.StopBits = TWOSTOPBIT;
+            dcb_config.StopBits = ONESTOPBIT;
             dcb_config.fBinary = TRUE;
             dcb_config.fParity = FALSE;
             dcb_config.fOutxCtsFlow = FALSE;
@@ -325,12 +314,9 @@ bool serial_set_baud_rate(int rate)
 
     attr.c_cflag |= (CLOCAL | CREAD | CS8);
     attr.c_cflag &= ~(CSIZE | CRTSCTS | PARENB);
-    // setting num StopBits
-    // added 2024 by Wolfgang Kutscherauer for ETA SH20 wood heating oven
-    // next line 1 Bit
-    attr.c_cflag &= ~CSTOPB; // clear stop fiel --> one stop Bit
-    // next line 2 stop bits
-    //attr.c_cflag |= CSTOPB;  // set stop field --> two stop Bits
+    // added 2025
+    // 2 Setting Stop-Stop-Bits
+    attr.c_cflag &= ~CSTOPB;
     if (tcsetattr(fd, TCSANOW, &attr) != 0)
     {
         strncpy(error_str, "Error reading COM port settings", sizeof(error_str));

@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <time.h>
+#include <termios.h>
 
 //project includes
 #include "config.h"
@@ -41,6 +42,8 @@
 
 char serial_buffer[256];
 
+int tty_fd;
+
 // Pointer to config
 CONFIG* maincfg;
 // Struct for conifg settings
@@ -58,6 +61,23 @@ int result;
 
 // need helping function as void 
 void enableVerbose();
+
+int tty_open(char* tty_dev) {
+  struct termios new_attributes;
+  tty_fd = open(tty_dev,O_RDWR| O_NOCTTY | O_NONBLOCK);
+  bzero(&new_attributes,sizeof(new_attributes));
+  new_attributes.c_cflag &= ~PARENB;
+  new_attributes.c_cflag &= ~CSTOPB;
+  new_attributes.c_cflag &= ~CSIZE;
+  new_attributes.c_cflag |= CS8;
+  new_attributes.c_cflag |= B19200;
+  int zahl = tcsetattr(tty_fd, TCSANOW, &new_attributes);
+  if (zahl < 0) {
+    printf ("Fehler %d\n",zahl);
+  }
+  return tty_fd;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -136,11 +156,13 @@ maincfg = &cfg;
     log_set_level(cfg.loglevel);
     logfptr = fopen(cfg.logfile, "w");
     result = log_add_fp(logfptr, cfg.loglevel);
+    log_trace("open tty: ", cfg.device);
+    result = tty_open(cfg.device) ;
 
 start:
     i = 0; framedata = 0; packet_displayed = 0; frameready = 0;
     // set index in serial_buffer, sync byte not received, count of published packets, end of data flag
-
+/*
     // open serial connection (fn from serial.c)
     log_trace("Start opening serial device %s", cfg.device);
     if (!serial_open_port(cfg.device))
@@ -149,6 +171,7 @@ start:
         printf("Errno(%d) opening serial port %s: %s\n", errno, cfg.device, strerror(errno));
         return 2;
     }
+  
     log_trace("Start setting baud rate to: %d", 19200);
     if (!serial_set_baud_rate(19200))
     {
@@ -156,6 +179,7 @@ start:
         printf("Failed to set baud rate: %s\n", serial_get_error());
         return 3;
     }
+    */
     log_trace("Baud rate for %s ist set to %d", cfg.device, 19200);
         // if the filename for sqlite db ist given, open it.
     if (cfg.database != NULL)

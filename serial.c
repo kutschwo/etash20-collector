@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+#include "log.h"
 static FILE *log_fp = NULL;
 
 #ifdef __WXMSW__
@@ -125,7 +126,8 @@ bool serial_open_port(const char *port)
 #else  // !__WXMSW__
     if (fd < 0)
     {
-		fd = open(port, O_RDWR | O_NONBLOCK); //new open file "DESCRIPTION"!
+		log_trace("fd = open(port, O_RDWR | O_NONBLOCK);","");
+        fd = open(port, O_RDWR | O_NONBLOCK); //new open file "DESCRIPTION"!
         if (fd >= 0) {
 			// Port Available
             ret = true;
@@ -164,6 +166,7 @@ int rate_to_constant(int baudrate) {
 bool serial_set_baud_rate(int rate)
 {
     bool ret = false;
+    log_trace("serial_set_baud_rate","");
 #ifdef __WXMSW__
     DCB dcb_config;
 
@@ -217,7 +220,7 @@ bool serial_set_baud_rate(int rate)
         strncpy(error_str, "Port not open", sizeof(error_str));
     }
 #else // !__WXMSW__
-
+log_trace("struct termios","");
     struct termios attr;
     struct serial_struct serinfo;
 
@@ -226,6 +229,7 @@ bool serial_set_baud_rate(int rate)
 
     if (speed == 0)
     {
+        log_trace("setting baud rate","");
         //Custom divisor
         serinfo.reserved_char[0] = 0;
         if (ioctl(fd, TIOCGSERIAL, &serinfo) < 0)
@@ -288,6 +292,7 @@ bool serial_set_baud_rate(int rate)
     // no input parity check, don't strip high bit off,
     // no XON/XOFF software flow control
     //
+    log_trace("Set attr.c_iflag","");
     attr.c_iflag &= ~(IGNBRK | BRKINT | ICRNL |
                         INLCR | PARMRK | INPCK |
                         ISTRIP | IXON | IXOFF | IXANY);
@@ -333,6 +338,7 @@ bool serial_set_baud_rate(int rate)
 //***************************************************************************
 bool serial_close_port(void)
 {
+    log_trace("serial_close_port(void)","");
     #ifdef __WXMSW__
         if (handle != INVALID_HANDLE_VALUE)
         {
@@ -346,7 +352,7 @@ bool serial_close_port(void)
             fd = -1;
         }
     #endif // __WXMSW__
-
+    
     if (log_fp != NULL)
     {
         fclose(log_fp);
@@ -360,6 +366,7 @@ bool serial_close_port(void)
 ssize_t serial_write(const void *buf, size_t count)
 {
     ssize_t ret = -1;
+    log_trace("ssize_t serial_write(const void *buf, size_t count)","");
     #ifdef __WXMSW__
         DWORD written;
         if (WriteFile(handle, buf, count, &written, NULL))
@@ -381,7 +388,7 @@ ssize_t serial_read(void *buf, size_t count)
     ssize_t bytes_recieved;
     void *buf_ptr = buf;
     ssize_t original_count = count;
-
+    log_trace("ssize_t serial_read(void *buf, size_t count)","");
     while (count > 0)
     {
         int status_data_available = is_data_available(fd);
@@ -420,6 +427,7 @@ ssize_t serial_read(void *buf, size_t count)
 //***************************************************************************
 int is_data_available(int fd)
 {
+    log_trace("is_data_available(int fd)","");
     #ifdef __WXMSW__
     	return 1;
     #else // !__WXMSW__

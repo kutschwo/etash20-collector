@@ -16,7 +16,7 @@
 
 typedef struct {
     // serial device /dev/....
-    char* device;
+    const char* device;
     // Pause in Sekunden zwischen den Abfragen
     int delay;
     // path to sqlite database

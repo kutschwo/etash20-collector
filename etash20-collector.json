@@ -3,7 +3,6 @@
     "device": "/dev/ttyUSB0",
     "loopforever": false,
     "delay": 60,
-    "_loglevels" : "0: LOG_TRACE, 1: LOG_DEBUG, 2: LOG_INFO, 3: LOG_WARN, 4: LOG_ERROR, 5: LOG_FATAL",
     "loglevel": 0,
     "withSql": true,
     "database": "etash20.db",
@@ -13,12 +12,8 @@
         "sensor_base": "haus/etash20/sensor",
         "actor_base":"haus/etash20/actor",
         "server": "tcp://10.210.0.3:1883",
-        "client_id": "softliq",
-        "user": "softliq",
-        "password": "SalzGrotte56"
-    },
-    "homeassistant": {
-        "enabled": false,
-        "entity_id_base": "sensor.etash20"
+        "client_id": "etash20",
+        "user": "etash20",
+        "password": "BurningMan59"
     }
 }

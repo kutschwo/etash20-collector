@@ -1,14 +1,11 @@
 //****************************************************************************
 // config.c
-//
-// Tobias Tangemann 2020
-// 
-// Funktionen zum Auslesen von Konfigurations-Werten aus .json Datei
+// Funktionen zum Auslesen von Konfigurations-Werten aus JSON Datei
+// Functions to read values from a JSON file.
 // Implementation
 //
 //****************************************************************************
 #include "config.h"
-#include "log.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -18,20 +15,20 @@
 #include <string.h>
 
 #include <cjson/cJSON.h>
-
+#include "log.h"
 
 int getParameter(cJSON* json, CONFIG* cfg);
 int getMqttParameter(const cJSON* mqtt, CONFIG* cfg);
-//int getHomeassistantParameter(const cJSON* hass, CONFIG* cfg);
 
 int parseConfig(const char* file, CONFIG* cfg)
 {
     int status = 0;
     FILE *fp = fopen(file, "rt");
+    log_trace("parseConfig: , file %s", file);
     if (fp == NULL)
     {
-        log_fatal("Error opening config file: %s", file);
         printf("Error opening config file: %s\n", file);
+        log_fatal("fatal error opening config file: %s -->stopping", file);
         return 8;
     }
 
@@ -51,7 +48,7 @@ int parseConfig(const char* file, CONFIG* cfg)
         const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL)
         {
-            fprintf(stderr, "Error before: %s\n", error_ptr);
+            fprintf(stderr, "Error before: %s, returncode 9", error_ptr);
             log_fatal("Error before: %s", error_ptr);
         }
 
@@ -68,6 +65,7 @@ int parseConfig(const char* file, CONFIG* cfg)
     if (mqtt == NULL || !cJSON_IsObject(mqtt)) {
 
         printf("Invalid value for mqtt\n");
+        log_error("Invalid value for mqtt%s ", "returncode 11");
         status = 11;
         goto end;
     }
@@ -81,189 +79,171 @@ int parseConfig(const char* file, CONFIG* cfg)
 end:
     cJSON_Delete(json);
     free(config);
-
     return status;
 }
 
 int getParameter(cJSON* json, CONFIG* cfg)
 {
     cJSON *value;
-
-    // Serial port, String
+    log_trace("Started function config.c: ", "getParameter");
+    // Serial port
     value = cJSON_GetObjectItem(json, "device");
+    log_trace("json device = %s|",value);
     if (value == NULL || !cJSON_IsString(value))
     {
         printf("Invalid value for device\n");
+        log_error("Invalid value for device, ", "returncode 11");
         return 10;
     }
-    log_trace("cfg->device: %s", value->valuestring);
+    log_info("Read JSON value serial device: ",value->valuestring);
     cfg->device = strdup(value->valuestring);
 
-    // Interval between checks, Number
-    value = cJSON_GetObjectItem(json, "delay");
-    if (value == NULL || !cJSON_IsNumber(value))
-    {
-        printf("Invalid value for interval\n");
-        log_error("Invalid value for interval");
-        return 10;
-    }
-    cfg->delay = value->valueint;
-    log_trace("cfg->delay: %d",cfg->delay);
-    
-        // loglevel , Number
-    value = cJSON_GetObjectItem(json, "loglevel");
-    if (value == NULL || !cJSON_IsNumber(value))
-    {
-        printf("Invalid value for loglevel\n");
-        log_error("Invalid value for loglevel");
-        return 10;
-    }
-    cfg->loglevel = value->valueint;
-    log_trace("cfg->loglevel: %d",cfg->loglevel);
-    
-    
+
     // Database path
+    log_trace("config.c start reading ","database path");
     value = cJSON_GetObjectItem(json, "database");
     if (value != NULL && value->valuestring != NULL) {
         if (!cJSON_IsString(value))
         {
             printf("Invalid value for database\n");
-            log_error("Invalid value for database\n");
+            log_error("Invalid value for database ", "returncode 10");
             return 10;
         }
-
+        log_info("Read JSON value for database: ", value->valuestring);
         cfg->database = strdup(value->valuestring);
-        log_trace("cfg->database: %s",cfg->database);
     }
 
-    // Use sqlite, bool
-    value = cJSON_GetObjectItem(json, "withSql");
-    if (value == NULL || !cJSON_IsBool(value))
+    // Interval
+    log_trace("config.c start reading ","delay");
+    value = cJSON_GetObjectItem(json, "delay");
+    if (value == NULL || !cJSON_IsNumber(value))
     {
-        printf("Invalid value for withSql\n");
-        log_fatal("Invalid value for withSql");
+        printf("Invalid value for interval\n");
+        log_error("Invalid value for interval, ", "returncode 10");
         return 10;
     }
-    log_trace("testmode: %d", value->valueint);
-    cfg->withSql = value->valueint != 0;
+    log_info("Read JSON value for interval: %d seconds.", value->valueint);
+    cfg->delay = value->valueint;
 
-    // Print results to stdout, bool
+    // read loglevel
+    log_trace("config.c start reading ","loglevel");
+    value = cJSON_GetObjectItem(json, "loglevel");
+    if (value == NULL || !cJSON_IsNumber(value))
+    {
+        printf("Invalid value for loglevel\n");
+        log_error("Invalid value for logelvel, ", "returncode 10");
+        return 10;
+    }
+    log_info("Read loglevel from JSON file: %d", value->valueint);
+    cfg->loglevel = value->valueint != 0;
+    log_set_level(value->valueint);
+
+    // Print to stdout
+    log_trace("config.c start reading: ","Print to stdout");
     value = cJSON_GetObjectItem(json, "print_stdout");
     if (value == NULL || !cJSON_IsBool(value))
     {
         printf("Invalid value for print_stdout\n");
-        log_fatal("Invalid value for print_stdout");
+        log_error("Invalid value for print_stdout, ", "returncode 10");
         return 10;
     }
+
     cfg->print_result = value->valueint != 0;
-    log_trace("cfg->print_result: %d",cfg->print_result);
+
     return 0;
-
-
-    
-} // END int getParameter(cJSON* json, CONFIG* cfg)
-    
-
-
-
+}
 
 int getMqttParameter(const cJSON* mqtt, CONFIG* cfg)
 {
     cJSON *value;
-
+    log_trace("config.c start funtion: ","getMqttParameter");
     // Enabled
+    log_trace("config.c start reading: ","mqtt enabled");
     value = cJSON_GetObjectItem(mqtt, "enabled");
     if (value == NULL || !cJSON_IsBool(value))
     {
         printf("Invalid value for mqtt.enabled\n");
-        log_error("Invalid value for mqtt.enabled.");
+        log_error("Invalid value for mqtt.enabled %s", "returncode 10");
         return 10;
     }
+
     cfg->mqtt_enabled = value->valueint != 0;
-    log_trace("cfg->mqtt_enabled: %d",cfg->mqtt_enabled);
-    // if enabled = false --> stop reading config as no mqtt will be used.
     if (cfg->mqtt_enabled == 0) {
+        log_trace("config.c read mqtt_enabled = %d", value->valueint);
         return 0;
     }
-    
-    // MQTT sensor_base
-    value = cJSON_GetObjectItem(mqtt, "sensor_base");
-    if (value == NULL || !cJSON_IsString(value))
-    {
-        printf("Invalid value for mqtt.mqtt_sensor_base \n");
-        log_error("Invalid value for mqtt.mqtt_sensor_base.");
-        return 10;
-    }
-    cfg->mqtt_sensor_base = strdup(value->valuestring);
-    log_trace("cfg->mqtt_sensor_base: %s",cfg->mqtt_sensor_base);
-// END MQTT sensor_base
-    
-    
-    // MQTT actor_base
-    value = cJSON_GetObjectItem(mqtt, "actor_base");
-    if (value == NULL || !cJSON_IsString(value))
-    {
-        printf("Invalid value for mqtt.actor_base \n");
-        log_error("Invalid value for mqtt.actor_base.");
-        return 10;
-    }
-    cfg->mqtt_actor_base = strdup(value->valuestring);
-    log_trace("cfg->mqtt_actor_base: %s",cfg->mqtt_sensor_base);
-// END MQTT actor_base
 
     // MQTT server
+    log_trace("config.c start reading: %s ","mqtt server");
     value = cJSON_GetObjectItem(mqtt, "server");
     if (value == NULL || !cJSON_IsString(value))
     {
         printf("Invalid value for mqtt.server\n");
-        log_error("Invalid value for mqtt.server");
+        log_error("config.c Invalid value for: mqtt.server", "returncode 10");
         return 10;
     }
 
     cfg->mqtt_server = strdup(value->valuestring);
-    log_trace("cfg->mqtt_server: %s",cfg->mqtt_server );
+    log_trace("config.c read mqtt.server: %s", value->valuestring);
 
     // MQTT client_id
+    log_trace("config.c start reading: %s","MQTT client_id");
     value = cJSON_GetObjectItem(mqtt, "client_id");
     if (value == NULL || !cJSON_IsString(value))
     {
         printf("Invalid value for mqtt.client_id\n");
-        log_error("Invalid value for mqtt.client_id");
         return 10;
     }
 
     cfg->mqtt_client_id = strdup(value->valuestring);
-    log_trace("mqtt_client_id: %s", cfg->mqtt_client_id);
 
     // MQTT user
+    log_trace("config.c start reading: ","MQTT user");
     value = cJSON_GetObjectItem(mqtt, "user");
     if (value != NULL && value->valuestring != NULL) {
         if (!cJSON_IsString(value))
         {
             printf("Invalid value for mqtt.user\n");
-            log_error("Invalid value for mqtt.user");
             return 10;
         }
 
         cfg->mqtt_user = strdup(value->valuestring);
-        log_trace("cfg->mqtt_user: %s", cfg->mqtt_user);
     }
 
     // MQTT password
+    log_trace("config.c start reading: ","MQTT password");
     value = cJSON_GetObjectItem(mqtt, "password");
     if (value != NULL && value->valuestring != NULL) {
         if (!cJSON_IsString(value))
         {
-            log_error("Invalid value for mqtt.password");
+            printf("Invalid value for mqtt.password\n");
             return 10;
         }
 
         cfg->mqtt_password = strdup(value->valuestring);
-        log_trace("cfg->mqtt_password: %s", cfg->mqtt_password);
     }
 
+    // MQTT sensor_base
+    log_trace("config.c start reading: ","MQTT sensor_base");
+    value = cJSON_GetObjectItem(mqtt, "sensor_base");
+    if (value == NULL || !cJSON_IsString(value))
+    {
+        printf("Invalid value for mqtt.sensor_base\n");
+        return 10;
+    }
 
+    cfg->mqtt_sensor_base = strdup(value->valuestring);
+
+        // MQTT actor_base
+    log_trace("config.c start reading: ","MQTT actor_base");
+    value = cJSON_GetObjectItem(mqtt, "actor_base");
+    if (value == NULL || !cJSON_IsString(value))
+    {
+        printf("Invalid value for mqtt.actor_base\n");
+        return 10;
+    }
+
+    cfg->mqtt_actor_base = strdup(value->valuestring);
     return 0;
-} // int getMqttParameter(const cJSON* mqtt, CONFIG* cfg)
-
+}
 

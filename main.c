@@ -159,7 +159,7 @@ start:
         log_fatal("Fatal error opening serial port %s, error: %d, %s", cfg.device, errno, strerror(errno) );
         printf("Errno(%d) opening serial port %s: %s\n", errno, cfg.device, strerror(errno));
         return 2;
-    }
+    } // END if (!serial_open_port(cfg.device))
   
     log_trace("Start setting baud rate to: %d", 19200);
     if (!serial_set_baud_rate(19200))
@@ -193,10 +193,11 @@ start:
       log_info("Connecting to mqtt server %s",cfg.mqtt_server);
       reconnect_mqtt(&cfg);
     }
-    log_info("collecting data from %s", cfg.device);
+    
     // write request to eta sh20
     written = serial_write(StdDataRequest, LenStdReqest);
-    
+    log_trace("Wrote request do %s", cfg.device);
+    log_info("Starting main loop");
 // start main loop
     do
     {    

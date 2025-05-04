@@ -395,6 +395,7 @@ ssize_t serial_read(void *buf, size_t count)
         // Data may be available...
         if (status_data_available > 0)
         {
+            log_trace("Bytes available status_data_available: %d",status_data_available);
             #ifdef __WXMSW__
                 DWORD read;
                 if (ReadFile(handle, buf, count, &read, NULL)) {
@@ -410,10 +411,12 @@ ssize_t serial_read(void *buf, size_t count)
         {
             // Timed out - nothing to read!
             // Hence "original_count" will equal "count"
+            log_error("Timed out - nothing to read!");
             break;
         }
         else if (status_data_available < 0)
         {
+            log_error("Error in SELECT function, Hope this doesn't happen!");
             // Error in SELECT function
             // Hope this doesn't happen!
             return -1;
@@ -421,6 +424,7 @@ ssize_t serial_read(void *buf, size_t count)
     }
     ret = original_count - count; //For a data packet this value should be 247
 	debug_log(buf, ret, false);
+    log_trace("read bytes: %d", count);
     return ret;
 }
 

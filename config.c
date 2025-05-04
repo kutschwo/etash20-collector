@@ -2,6 +2,7 @@
 // config.c
 //
 // Tobias Tangemann 2020
+// Wolfgang Kutscherauer 2025 adopted to ETA sh20 wood heating
 // 
 // Funktionen zum Auslesen von Konfigurations-Werten aus .json Datei
 // Implementation
@@ -19,22 +20,24 @@
 
 #include <cjson/cJSON.h>
 
-
+// define function to get common parameter
 int getParameter(cJSON* json, CONFIG* cfg);
+// define function for mqtt parameter
 int getMqttParameter(const cJSON* mqtt, CONFIG* cfg);
-//int getHomeassistantParameter(const cJSON* hass, CONFIG* cfg);
 
 int parseConfig(const char* file, CONFIG* cfg)
 {
     int status = 0;
+    //open json-file 
     FILE *fp = fopen(file, "rt");
     if (fp == NULL)
     {
         log_fatal("Error opening config file: %s", file);
-        printf("Error opening config file: %s\n", file);
+        //printf("Error opening config file: %s\n", file);
         return 8;
     }
 
+    //read the whole file into a char array.
     fseek (fp, 0, SEEK_END);
     int fileLength = ftell(fp);
     fseek(fp, 0, SEEK_SET);
@@ -44,8 +47,10 @@ int parseConfig(const char* file, CONFIG* cfg)
     config[fileLength] = '\0';
     fclose(fp);
 
+    //parse config test and get a pointer to the parsed configuration
     cJSON *json = cJSON_Parse(config);
 
+    //Pointer will be NULL on error.
     if (json == NULL)
     {
         const char *error_ptr = cJSON_GetErrorPtr();
@@ -59,21 +64,26 @@ int parseConfig(const char* file, CONFIG* cfg)
         goto end;
     }
 
+    // call private function that read the known parameter
     status = getParameter(json, cfg);
     if (status != 0) {
+        log_error("Error in getParameter, status-code: %d",status);
         goto end;
     }
 
+    //get parameters of group mqtt
     const cJSON* mqtt = cJSON_GetObjectItem(json, "mqtt");
     if (mqtt == NULL || !cJSON_IsObject(mqtt)) {
 
         printf("Invalid value for mqtt\n");
+        log_error("Invalid value for mqtt");
         status = 11;
         goto end;
     }
-
+    // read mqtt parameter with privat function
     status = getMqttParameter(mqtt, cfg);
     if (status != 0) {
+        log_error("Error in getMqttParameter, status-code: %d",status);
         goto end;
     }
 
@@ -93,7 +103,7 @@ int getParameter(cJSON* json, CONFIG* cfg)
     value = cJSON_GetObjectItem(json, "device");
     if (value == NULL || !cJSON_IsString(value))
     {
-        printf("Invalid value for device\n");
+        log_error("Invalid value for device");
         return 10;
     }
     log_trace("cfg->device: %s", value->valuestring);

@@ -144,10 +144,9 @@ maincfg = &cfg;
     }
     
     log_set_level(cfg.loglevel);
-    logfptr = fopen(cfg.logfile, "w");
-    result = log_add_fp(logfptr, cfg.loglevel);
-    log_trace("open tty: ", cfg.device);
-  //  result = tty_open("/dev/ttyUSB0\0") ;
+//    logfptr = fopen(cfg.logfile, "w");
+//    result = log_add_fp(logfptr, cfg.loglevel);
+
 
 start:
     i = 0; framedata = 0; packet_displayed = 0; frameready = 0;

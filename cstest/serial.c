@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "log.h"
 static FILE *log_fp = NULL;
 
 #ifdef __WXMSW__
@@ -126,8 +125,7 @@ bool serial_open_port(const char *port)
 #else  // !__WXMSW__
     if (fd < 0)
     {
-		log_trace("fd = open(port, O_RDWR | O_NONBLOCK);","");
-        fd = open(port, O_RDWR | O_NONBLOCK); //new open file "DESCRIPTION"!
+		fd = open(port, O_RDWR | O_NONBLOCK); //new open file "DESCRIPTION"!
         if (fd >= 0) {
 			// Port Available
             ret = true;
@@ -166,7 +164,6 @@ int rate_to_constant(int baudrate) {
 bool serial_set_baud_rate(int rate)
 {
     bool ret = false;
-    log_trace("serial_set_baud_rate","");
 #ifdef __WXMSW__
     DCB dcb_config;
 
@@ -220,7 +217,7 @@ bool serial_set_baud_rate(int rate)
         strncpy(error_str, "Port not open", sizeof(error_str));
     }
 #else // !__WXMSW__
-log_trace("struct termios","");
+
     struct termios attr;
     struct serial_struct serinfo;
 
@@ -229,7 +226,6 @@ log_trace("struct termios","");
 
     if (speed == 0)
     {
-        log_trace("setting baud rate","");
         //Custom divisor
         serinfo.reserved_char[0] = 0;
         if (ioctl(fd, TIOCGSERIAL, &serinfo) < 0)
@@ -292,7 +288,6 @@ log_trace("struct termios","");
     // no input parity check, don't strip high bit off,
     // no XON/XOFF software flow control
     //
-    log_trace("Set attr.c_iflag","");
     attr.c_iflag &= ~(IGNBRK | BRKINT | ICRNL |
                         INLCR | PARMRK | INPCK |
                         ISTRIP | IXON | IXOFF | IXANY);
@@ -316,12 +311,9 @@ log_trace("struct termios","");
     // Turn off character processing
     // clear current char size mask, no parity checking,
     // no output processing, force 8 bit input
-
-    attr.c_cflag |= (CLOCAL | CREAD | CS8);
+// tty.c_cflag |= CSTOPB;  // Set stop field, two stop bits used in communication
+    attr.c_cflag |= (CLOCAL | CREAD | CS8 | CSTOPB);
     attr.c_cflag &= ~(CSIZE | CRTSCTS | PARENB);
-    // added 2025
-    // 2 Setting Stop-Stop-Bits
-    attr.c_cflag &= ~CSTOPB;
     if (tcsetattr(fd, TCSANOW, &attr) != 0)
     {
         strncpy(error_str, "Error reading COM port settings", sizeof(error_str));
@@ -338,7 +330,6 @@ log_trace("struct termios","");
 //***************************************************************************
 bool serial_close_port(void)
 {
-    log_trace("serial_close_port(void)","");
     #ifdef __WXMSW__
         if (handle != INVALID_HANDLE_VALUE)
         {
@@ -352,7 +343,7 @@ bool serial_close_port(void)
             fd = -1;
         }
     #endif // __WXMSW__
-    
+
     if (log_fp != NULL)
     {
         fclose(log_fp);
@@ -366,7 +357,6 @@ bool serial_close_port(void)
 ssize_t serial_write(const void *buf, size_t count)
 {
     ssize_t ret = -1;
-    log_trace("ssize_t serial_write(const void *buf, size_t count)","");
     #ifdef __WXMSW__
         DWORD written;
         if (WriteFile(handle, buf, count, &written, NULL))
@@ -388,14 +378,13 @@ ssize_t serial_read(void *buf, size_t count)
     ssize_t bytes_recieved;
     void *buf_ptr = buf;
     ssize_t original_count = count;
-    log_trace("ssize_t serial_read(void *buf, size_t count)","");
+
     while (count > 0)
     {
         int status_data_available = is_data_available(fd);
         // Data may be available...
         if (status_data_available > 0)
         {
-            log_trace("Bytes available status_data_available: %d",status_data_available);
             #ifdef __WXMSW__
                 DWORD read;
                 if (ReadFile(handle, buf, count, &read, NULL)) {
@@ -411,12 +400,10 @@ ssize_t serial_read(void *buf, size_t count)
         {
             // Timed out - nothing to read!
             // Hence "original_count" will equal "count"
-            log_error("Timed out - nothing to read!");
             break;
         }
         else if (status_data_available < 0)
         {
-            log_error("Error in SELECT function, Hope this doesn't happen!");
             // Error in SELECT function
             // Hope this doesn't happen!
             return -1;
@@ -424,14 +411,12 @@ ssize_t serial_read(void *buf, size_t count)
     }
     ret = original_count - count; //For a data packet this value should be 247
 	debug_log(buf, ret, false);
-    log_trace("read bytes: %d", count);
     return ret;
 }
 
 //***************************************************************************
 int is_data_available(int fd)
 {
-    log_trace("is_data_available(int fd)","");
     #ifdef __WXMSW__
     	return 1;
     #else // !__WXMSW__

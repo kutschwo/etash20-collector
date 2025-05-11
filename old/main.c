@@ -81,10 +81,10 @@ int main(int argc, char *argv[])
     log_trace("Num args: %d",argc);
     
 // parse command line options
-    for (int idx = 0; idx < argc; ++idx)
+    for (int idx = 1; idx < argc; ++idx)
     {
         char *option = argv[idx];
-        log_trace("argv[%d]: %s", argv[idx]);
+        log_trace("argv[%d]: %s", idx, argv[idx]);
         if (strcmp("-c", option) == 0 || strcmp("--config", option) == 0)
         {
                // printf("Config file is not supported\\");
@@ -195,7 +195,8 @@ start:
     }
     
     // write request to eta sh20
-    written = serial_write(StdDataRequest, LenStdReqest);
+    //written = serial_write(StdDataRequest, LenStdReqest);
+    written = serial_write(MsgTempOben, 10);
     log_trace("Wrote request do %s", cfg.device);
     log_info("Starting main loop");
 // start main loop
@@ -216,12 +217,14 @@ start:
           {
             // sleep 50ms
             nanosleep((const struct timespec[]){{.tv_sec = 0, .tv_nsec = 50000000L}}, NULL);            
+            printf(".");
             continue;
           }
           // if the received byte = { it is the start of a data packet
           // write it to byte 0 of buffer and set header sync to 1
           if (serial_buffer[i]  == '{')
           {
+            log_trace("{: Start empfangen");
             serial_buffer[0] = serial_buffer[i];
             i=0;
             framedata = 1;
@@ -241,6 +244,7 @@ start:
            if (framedata == 1 && serial_buffer[i] == '}')
            {
              frameready = 1;
+             log_trace("}: Ende empfangen");
            }
            i++;  
         } while (frameready == 0) ; // END do .. while (frameready == 0) 

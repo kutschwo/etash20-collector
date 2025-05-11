@@ -3,8 +3,8 @@
 ############
 
 # C source files
-##SOURCES = log.c config.c  etash20.c  kbhit.c   mqtt.c  serial.c  sqlite.c sh20prnfuncs.c main.cc
-SOURCES =  main.cpp
+SOURCES = log.c config.c  etash20.c  kbhit.c   mqtt.c  serial.c  sqlite.c sh20prnfuncs.c main.c
+
 # Optimization
 OPT = -O3 -flto
 
@@ -17,8 +17,8 @@ TARGET = etash20-collector
 
 GIT_VERSION := "$(shell git describe --long --always --tags)"
 
-CC = g++
-CFLAGS =  $(OPT) -c -Wall  -DGIT_VERSION=\"$(GIT_VERSION)\" -DLOG_USE_COLOR
+CC = gcc
+CFLAGS = -std=gnu11 $(OPT) -c -Wall -Ipaho.mqtt.c/src/  -DGIT_VERSION=\"$(GIT_VERSION)\" -DLOG_USE_COLOR
 
 # uncomment next line for Json config file support
 CFLAGS += -D__JSON__
@@ -27,10 +27,9 @@ CFLAGS += -D__JSON__
 # a sqlite3 database
 CFLAGS += -D__SQLITE__
 
-#LDFLAGS = -LcJSON/build/ -Lpaho.mqtt.c/build/src/ $(OPT) -fuse-linker-plugin -lcurl -lsqlite3 -lpaho-mqtt3c -lcjson -lpthread -lm
-LDFLAGS =  -lm
+LDFLAGS = -LcJSON/build/ -Lpaho.mqtt.c/build/src/ $(OPT) -fuse-linker-plugin -lcurl -lsqlite3 -lpaho-mqtt3c -lcjson -lpthread -lm
 #-l:libpaho-mqtt3c.a 
-OBJECTS = $(SOURCES:%.cpp=$(OBJDIR)/%.o)
+OBJECTS = $(SOURCES:%.c=$(OBJDIR)/%.o)
 
 REMOVE    = rm -f
 REMOVEDIR = rm -rf
@@ -47,7 +46,7 @@ all: createdirs $(SOURCES) $(TARGET)
 $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
-$(OBJDIR)/%.o: %.cpp
+$(OBJDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
 createdirs:

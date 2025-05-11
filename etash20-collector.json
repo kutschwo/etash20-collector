@@ -12,8 +12,8 @@
         "sensor_base": "haus/etash20/sensor",
         "actor_base":"haus/etash20/actor",
         "server": "tcp://10.210.0.3:1883",
-        "client_id": "etash20",
-        "user": "etash20",
-        "password": "xxxxxx"
+        "client_id": "softliq",
+        "user": "softliq",
+        "password": "SalzGrotte56"
     }
 }

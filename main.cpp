@@ -9,32 +9,22 @@
 // last change 27.04.2025 by Wolfgang Kutscherauer kutschi@dingolfing.org
 //
 //****************************************************************************
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#include "spdlog/spdlog.h"
 #include <iostream>
 #include <iterator>
 #include <string>
-// system includes
-//#include <stdint.h>
-//#include <stdbool.h>
-//#include <string.h>
-//#include <unistd.h>
-//#include <errno.h>
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <sys/types.h>
-//#include <sys/stat.h>
-//#include <fcntl.h>
-//#include <time.h>
-//#include <termios.h>
+#include <bits/stdc++.h> 
+
+#include "config.hpp"
+#include "etash20.hpp"
+
+#include "easylogging++.h"
 
 //project includes
-//#include "config.h"
-//#include "datatypes.h"
 //#include "kbhit.h"
-//#include "serial.h"
-//#include "etash20.h"
 //#include "mqtt.h"
-//#include "sh20prnfuncs.h"
-//#include "log.h"
+
 #ifdef __SQLITE__
     //#include "sqlite.h"
 #endif
@@ -43,47 +33,26 @@
     #define GIT_VERSION "unknown"
 #endif
 
-char serial_buffer[256];
-
-int tty_fd;
-
-// Pointer to config
-//CONFIG* maincfg;
-// Struct for conifg settings
-//CONFIG cfg;
-// String for filename of json config-file
-//char CfgFileName[256];
-// length of argument string
-//int len;
-// LogFile
-//FILE *logfptr;
-// Num of byte written to serial device
-//ssize_t written;
-// integer return value
-//int result;
-
-// need helping function as void 
 void enableVerbose();
-
+void PrintHelp();
 
 int main(int argc, char *argv[])
 {
+    bool erg;
+    int num;
+    //int i;
     std::string  CfgFileName;
+    Config eta_cfg{};
+    ETAsh20 mysh20{};
     std::cout << "etash20-collector " << GIT_VERSION << std::endl;
     std::copy(argv, argv + argc, std::ostream_iterator<char *>(std::cout, "\n"));
-    //log_info("etash20-collector "GIT_VERSION"");
-
-//    Data_Packet packet;
-    //PVBUS_V1_CMD pPacket = (PVBUS_V1_CMD)&serial_buffer[0];
-  //  unsigned char i = 0;
-    //int framedata = 0;          // 1 solange Daten eines Frames empfangen werden
-    //int frameready = 0;         // sobald } empfangen wird ist der Frame fertig
-    //int loopforever = 0;        // wenn das Programm als Dienst läuft = 1 für Endlos-Betrieb.
-    //int packet_displayed = 0;
-    // bool firstLoop = true;      // wenn das Programm das 1. mal durchlaufen wird --> Einrichtung DB, etc.
-
-    //log_trace("Num args: %d",argc);
-    std::cout << "Num arguments: " << argc << std::endl;
+    std::string device_string;
+    char serial_device[40];
+    SPDLOG_INFO("etash20-collector {}",GIT_VERSION);
+    int werte[20] = {3, 7, 8, 9, 10, 11, 12, 15, 16, 17, 31, 39, 43, 68, 70, 75, 76, 197, 198, 212};
+spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+    
+    SPDLOG_TRACE("Num args: {}",argc);
     
    if (argc < 3) {
         std::cerr << "Zu wenige Argumente!\n" <<  "Usage: " << argv[0] << "-c configurationfile" << std::endl;
@@ -93,17 +62,15 @@ int main(int argc, char *argv[])
 
     for (int idx = 1; idx < argc; ++idx)
     {
-        char *option = argv[idx];
-        //log_trace("argv[%d]: %s", idx, argv[idx]);
-        if (std::string(argv[idx]) == "-c" || std::string(argv[idx]) == "--config" )
+//        char *option = argv[idx];
+      SPDLOG_TRACE("argv[{}]: {}", idx, argv[idx]);
+      if (std::string(argv[idx]) == "-c" || std::string(argv[idx]) == "--config" )
+      {
+        CfgFileName = argv[idx+1];
+        if (argc <= idx + 1)
         {
-          CfgFileName = argv[idx+1];
-               // printf("Config file is not supported\\");
-               // return 7;
-                if (argc <= idx + 1)
-                {
-                    printf("Missing config file\n");
-                   // log_fatal("Missing config file");
+          //printf("Missing config file\n");
+          SPDLOG_CRITICAL("Missing config file");
                     return 7;
                 }
                 // Use next option as file name/path
@@ -120,47 +87,74 @@ int main(int argc, char *argv[])
             
         if (std::string(argv[idx]) == "-h" || std::string(argv[idx]) == "--help" )
         {
-          std::cout << "Hilfe fehlt!" << std::endl;
-          //print_help();
-            return 0;
+          PrintHelp();
+          return 0;
         } // END if for help message
     } // END for (int idx = 1; idx < argc; ++idx)
 
-//Initialisierung der der CONFIG-Struktur, alles auf 0, false, NULL
-// damit der Initial-Zustand definiert ist.
-//    cfg.device = NULL;
-//    cfg.delay = 0;
-//    cfg.database = NULL;
-//    cfg.withSql = false;
-//    cfg.print_result = true;
-//    cfg.loglevel = 4;
-//    cfg.logfile = NULL;
-//    cfg.mqtt_enabled = false;
-//    cfg.mqtt_user = NULL;
-//    cfg.mqtt_password = NULL;
-//    cfg.mqtt_server = NULL;
-//    cfg.mqtt_sensor_base = NULL;
-//    cfg.mqtt_actor_base = NULL;
-//    cfg.mqtt_client_id = NULL;
+     erg = eta_cfg.SetConfigFile(CfgFileName);
+ //   log_trace("Parsing JSON File: %s",CfgFileName);
+    eta_cfg.ParseConfigFile();
+    // eta_cfg.SetDelay(500);
 
-// set pointer to cfg struct
-//maincfg = &cfg;
+     
+  SPDLOG_TRACE("Get_testmode:           {}", eta_cfg.Get_testmode() );
+  SPDLOG_TRACE("Get_device():           {}", eta_cfg.Get_device() );
+  SPDLOG_TRACE("Get_loopforever():      {}", eta_cfg.Get_loopforever() );
+  SPDLOG_TRACE("Get_delay():            {}", eta_cfg.Get_delay() );
+  SPDLOG_TRACE("Get_loglevel():         {}", eta_cfg.Get_loglevel() );
+  SPDLOG_TRACE("Get_withSql():          {}", eta_cfg.Get_withSql() );
+  SPDLOG_TRACE("Get_database():         {}", eta_cfg.Get_database() );
+  SPDLOG_TRACE("Get_print_stdout():     {}", eta_cfg.Get_print_stdout() );
+  SPDLOG_TRACE("Get_mqtt_enabled():     {}", eta_cfg.Get_mqtt_enabled() );
+  SPDLOG_TRACE("Get_mqtt_sensor_base(): {}", eta_cfg.Get_mqtt_sensor_base() );
+  SPDLOG_TRACE("Get_mqtt_sensor_base(): {}", eta_cfg.Get_mqtt_actor_base() );
+  SPDLOG_TRACE("Get_mqtt_server():      {}", eta_cfg.Get_mqtt_server() );
+  SPDLOG_TRACE("Get_mqtt_client_id():   {}", eta_cfg.Get_mqtt_client_id() );
+  SPDLOG_TRACE("Get_mqtt_user():        {}", eta_cfg.Get_mqtt_user() );
+  SPDLOG_TRACE("Get_mqtt_password():    {}", eta_cfg.Get_mqtt_password() );
+    
+  // Objekt für den Ofen inieren
+  
+  device_string = eta_cfg.Get_device();
+    
+    
+    
+	strcpy(serial_device, device_string.c_str()); 
+    SPDLOG_TRACE("mysh20.SetSerialPort(serial_device): {}", serial_device);
+    mysh20.SetSerialPort(serial_device);
 
-// parse the JSON config file using parseConfig from config.c
-//     if (parseConfig(CfgFileName, &cfg) != 0)
-//     {
-//         printf("Error parsing config file\n");
-//         log_fatal("Fatal error parsing config file %s",CfgFileName);
-//         print_help();
-//         return 7;
-//     }
+  erg = mysh20.OpenConnection();
+  SPDLOG_TRACE("mysh20.OpenConnection(); erg = {}", erg );
+  erg = mysh20.WriteRequest(mysh20.StdDataRequest);
+  SPDLOG_TRACE("mysh20.WriteRequest(mysh20.StdDataRequest) erg = {}", erg );
+  num = mysh20.ReadMessage();
+  SPDLOG_TRACE("mysh20.ReadMessage() num = {}", num  );
+  num =  mysh20.ParseMessage();
+  SPDLOG_TRACE("mysh20.ParseMessage() num = {}", num);
+  
+  //std::cout << "umschalten auf Tag-Betrieb \n\n\n";
+  //erg = mysh20.WriteRequest(mysh20.heizung_tag_msg);
 //     
 //     log_set_level(cfg.loglevel);
 // //    logfptr = fopen(cfg.logfile, "w");
 // //    result = log_add_fp(logfptr, cfg.loglevel);
-
-
-start:
+  
+  
+  for (int i : werte) {
+    if(mysh20.GetType(i) == 'f')
+    {
+      std::cout << std::fixed << std::setprecision(1); // Setze Ausgabeformat
+      
+      std::cout << "i: " << i << "Typ: " << mysh20.GetType(i) << ", topic: " << mysh20.GetTopic(i) << ",Value:  " << float(mysh20.GetInt(i))/10 << std::endl;
+    }else{
+      std::cout << "i: " << i << "Typ: " << mysh20.GetType(i) << ", topic: " << mysh20.GetTopic(i) << ",Value:  " << mysh20.GetInt(i) << std::endl;
+    }
+    
+    
+  }
+std::cout << "\n\n *** fertig *** \n\n";
+//start:
 //     i = 0; framedata = 0; packet_displayed = 0; frameready = 0;
 //     // set index in serial_buffer, sync byte not received, count of published packets, end of data flag
 // 
@@ -331,7 +325,19 @@ start:
 
 void enableVerbose()
 {
-/*    maincfg->loglevel = 2;
-    log_set_level(LOG_INFO);*/
-  std::cout << "void enableVerbose(): nicht implementiert" << std::endl;
+  spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+  SPDLOG_TRACE("Set LOGLEVEL to TRACE!");
+  
+}
+
+void PrintHelp()
+{
+    //log_trace("print_help started...", "");
+    std::cout << "Usage: etash20-collector -c, --config [configfile]..." << std::endl;
+    std::cout << "-h, --help ..........print this help message an exit"  << std::endl;
+    std::cout << "etash20-collector get data via RS232 19200 8N2 from a ETA sha20 wood heating." << std::endl;
+    std::cout << "The data could be stored to sqlite db, mqtt brocker, homassistant server"  << std::endl;
+    std::cout << "The configuration ist stored in a necessary *.json file"  << std::endl;
+    std::cout << "Supported is a ETA sh20  systems from about 2005 to 2012, with 9-Pin RS232 connection." << std::endl;
+
 }

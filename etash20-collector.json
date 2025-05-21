@@ -3,17 +3,15 @@
     "device": "/dev/ttyUSB0",
     "loopforever": false,
     "delay": 60,
-    "loglevel": 0,
+    "loglevel": 5,
     "withSql": true,
-    "database": "etash20.db",
+    "database": "/usr/local/share/etash20.db",
     "print_stdout": true,
-    "mqtt": {
-        "enabled": true,
-        "sensor_base": "haus/etash20/sensor",
-        "actor_base":"haus/etash20/actor",
-        "server": "tcp://10.210.0.3:1883",
-        "client_id": "softliq",
-        "user": "softliq",
-        "password": "SalzGrotte56"
-    }
+    "mqtt_enabled": true,
+    "mqtt_sensor_base": "haus/etash20/sensor",
+    "mqtt_actor_base":"haus/etash20/actor",
+    "mqtt_server": "tcp://10.210.0.3:1883",
+    "mqtt_client_id": "softliq",
+    "mqtt_user": "softliq",
+    "mqtt_password": "SalzGrotte56"
 }

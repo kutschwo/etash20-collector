@@ -11,3 +11,10 @@ In 2012 the electronic was changed to an REST interface.
 Search for Plugins for OpenHab or Homeassitant
 Now 2025 a KNX interface ist the standard.
 Use the KNX Plugins
+
+
+libspdlog-dev - Very fast, header only or compiled, C++ logging library
+libspdlog1.15 - Very fast C++ logging library
+
+libjsoncpp26  libjsoncpp-dev
+libserial1 libserial-dev

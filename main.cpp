@@ -15,13 +15,14 @@
 #include <iterator>
 #include <string>
 #include <bits/stdc++.h> 
-
+//project includes
 #include "config.hpp"
 #include "etash20.hpp"
+#include "sqldb.hpp"
 
-#include "easylogging++.h"
 
-//project includes
+
+
 //#include "kbhit.h"
 //#include "mqtt.h"
 
@@ -44,9 +45,11 @@ int main(int argc, char *argv[])
     std::string  CfgFileName;
     Config eta_cfg{};
     ETAsh20 mysh20{};
+    SqlDb mydb;
     std::cout << "etash20-collector " << GIT_VERSION << std::endl;
     std::copy(argv, argv + argc, std::ostream_iterator<char *>(std::cout, "\n"));
     std::string device_string;
+    std::string values_string = " ";
     char serial_device[40];
     SPDLOG_INFO("etash20-collector {}",GIT_VERSION);
     int werte[20] = {3, 7, 8, 9, 10, 11, 12, 15, 16, 17, 31, 39, 43, 68, 70, 75, 76, 197, 198, 212};
@@ -147,12 +150,25 @@ spdlog::set_level(spdlog::level::trace); // Set global log level to debug
       std::cout << std::fixed << std::setprecision(1); // Setze Ausgabeformat
       
       std::cout << "i: " << i << "Typ: " << mysh20.GetType(i) << ", topic: " << mysh20.GetTopic(i) << ",Value:  " << float(mysh20.GetInt(i))/10 << std::endl;
+      values_string = values_string + std::to_string(float(mysh20.GetInt(i))/10);
+      if (i < 212)
+      {
+        values_string = values_string + " , ";
+      } // END if (i < 212)
     }else{
       std::cout << "i: " << i << "Typ: " << mysh20.GetType(i) << ", topic: " << mysh20.GetTopic(i) << ",Value:  " << mysh20.GetInt(i) << std::endl;
+      values_string = values_string + std::to_string(mysh20.GetInt(i));
+      if (i < 212)
+      {
+        values_string = values_string + " , ";
+      } // END if (i < 212)
     }
     
     
   }
+   std::string dbfile = eta_cfg.Get_database();
+   mydb.db_open(dbfile.c_str());
+   mydb.db_create_table();
 std::cout << "\n\n *** fertig *** \n\n";
 //start:
 //     i = 0; framedata = 0; packet_displayed = 0; frameready = 0;

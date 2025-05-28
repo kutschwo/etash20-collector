@@ -5,7 +5,7 @@
 # C source files
 ##SOURCES = log.c config.c  etash20.c  kbhit.c   mqtt.c  serial.c  sqlite.c sh20prnfuncs.c main.cc
 SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
-SOURCES =  etash20.cpp config.cpp  main.cpp
+SOURCES =  etash20.cpp config.cpp  sqldb.cpp main.cpp
 # Optimization
 OPT = -O3 -flto
 
@@ -26,7 +26,7 @@ CFLAGS =  $(OPT) -c -Wall -flto=auto -DGIT_VERSION=\"$(GIT_VERSION)\" -DLOG_USE_
 CFLAGS += -D__SQLITE__
 
 #LDFLAGS = -LcJSON/build/ -Lpaho.mqtt.c/build/src/ $(OPT) -fuse-linker-plugin -lcurl -lsqlite3 -lpaho-mqtt3c -lcjson -lpthread -lm
-LDFLAGS =  -lm -ljsoncpp -lserial -lspdlog -lfmt
+LDFLAGS =  -lm -ljsoncpp -lserial -lspdlog -lfmt  -lsqlite3
 #-l:libpaho-mqtt3c.a 
 OBJECTS = $(SOURCES:%.cpp=$(OBJDIR)/%.o)
 

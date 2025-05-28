@@ -15,6 +15,10 @@ Use the KNX Plugins
 
 libspdlog-dev - Very fast, header only or compiled, C++ logging library
 libspdlog1.15 - Very fast C++ logging library
+hängt ab von libfmt 
 
 libjsoncpp26  libjsoncpp-dev
 libserial1 libserial-dev
+
+
+libsqlitecpp-dev - smart and easy to use C++ SQLite3 wrapper
